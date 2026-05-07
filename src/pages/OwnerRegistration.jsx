@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 const STEPS = ['Account', 'Field details', 'Hours & pricing', 'Photos & submit']
 
-const FIELD_TYPES = ['Woodball', 'Speedball', 'Scenario', 'Rec ball', 'Hyperball', 'Tournament']
+const FIELD_TYPES = ['Woodball', 'Speedball', 'Scenario', 'Airsoft', 'Rec ball', 'Hyperball', 'Indoor', 'Tournament']
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 

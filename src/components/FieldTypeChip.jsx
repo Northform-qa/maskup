@@ -4,6 +4,7 @@ const COLOR_MAP = {
   Speedball: 'bg-blue-100 text-blue-800',
   Hyperball: 'bg-purple-100 text-purple-800',
   Indoor: 'bg-gray-100 text-gray-700',
+  Airsoft: 'bg-teal-100 text-teal-800',
   'Big games': 'bg-red-100 text-red-700',
   'Private bookings': 'bg-indigo-100 text-indigo-700',
 }

@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MapPlaceholder from '../components/MapPlaceholder'
 import StatusBadge from '../components/StatusBadge'
 import FieldTypeChip from '../components/FieldTypeChip'
 import ActivePlayers from '../components/ActivePlayers'
 import HeroPhoto from '../components/HeroPhoto'
-import { FIELDS, FILTER_CHIPS } from '../data/mockData'
+import { supabase } from '../lib/supabase'
+import { normalizeField } from '../lib/fieldUtils'
+import { FILTER_CHIPS } from '../data/mockData'
 
 const EXTRA_FILTERS = [
   { label: '🎿 Rentals', value: 'rentals' },
@@ -15,14 +17,37 @@ const EXTRA_FILTERS = [
 
 export default function DirectoryPage() {
   const [activeFilter, setActiveFilter] = useState('All')
-  const [selectedId, setSelectedId] = useState(FIELDS[0].id)
+  const [fields, setFields] = useState([])
+  const [selectedId, setSelectedId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [sort, setSort] = useState('Distance')
   const navigate = useNavigate()
 
+  useEffect(() => {
+    async function fetchFields() {
+      const { data, error } = await supabase
+        .from('fields')
+        .select('*, events(*)')
+        .eq('listing_status', 'published')
+        .order('name')
+
+      if (error) {
+        setError(error.message)
+      } else {
+        const normalized = (data ?? []).map(normalizeField)
+        setFields(normalized)
+        if (normalized.length > 0) setSelectedId(normalized[0].id)
+      }
+      setLoading(false)
+    }
+    fetchFields()
+  }, [])
+
   const filtered =
     activeFilter === 'All'
-      ? FIELDS
-      : FIELDS.filter((f) => f.field_types.includes(activeFilter))
+      ? fields
+      : fields.filter((f) => f.field_types.includes(activeFilter))
 
   const selectedField = filtered.find((f) => f.id === selectedId) ?? filtered[0]
 
@@ -70,6 +95,13 @@ export default function DirectoryPage() {
 
         {/* ── Left: field list ── */}
         <div className="w-72 flex-shrink-0 overflow-y-auto bg-white border-r border-gray-200">
+          {loading ? (
+            <div className="py-16 text-center text-gray-400 text-sm">Loading fields…</div>
+          ) : error ? (
+            <div className="py-16 text-center text-red-400 text-sm px-4">{error}</div>
+          ) : filtered.length === 0 ? (
+            <div className="py-16 text-center text-gray-400 text-sm">No fields match this filter.</div>
+          ) : null}
           <div className="divide-y divide-gray-100">
             {filtered.map((field) => {
               const active = field.id === selectedId
@@ -150,13 +182,17 @@ export default function DirectoryPage() {
                 {selectedField.distance_km != null && ` · ${selectedField.distance_km} km`}
               </div>
 
-              {/* Star rating */}
-              <div className="flex items-center gap-1 mb-3">
-                {'★★★★★'.split('').map((_, i) => (
-                  <span key={i} className={`text-sm ${i < Math.floor(selectedField.rating) ? 'text-yellow-400' : 'text-gray-200'}`}>★</span>
-                ))}
-                <span className="text-xs text-gray-500 ml-0.5">({selectedField.review_count})</span>
-              </div>
+              {/* Star rating — hidden until Phase 2 reviews */}
+              {selectedField.rating != null && (
+                <div className="flex items-center gap-1 mb-3">
+                  {'★★★★★'.split('').map((_, i) => (
+                    <span key={i} className={`text-sm ${i < Math.floor(selectedField.rating) ? 'text-yellow-400' : 'text-gray-200'}`}>★</span>
+                  ))}
+                  {selectedField.review_count != null && (
+                    <span className="text-xs text-gray-500 ml-0.5">({selectedField.review_count})</span>
+                  )}
+                </div>
+              )}
 
               {/* Status badges */}
               <div className="flex flex-wrap gap-1.5 mb-4">

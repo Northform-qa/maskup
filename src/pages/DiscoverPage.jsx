@@ -1,21 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MapPlaceholder from '../components/MapPlaceholder'
 import StatusBadge from '../components/StatusBadge'
 import StarRating from '../components/StarRating'
 import ActivePlayers from '../components/ActivePlayers'
 import HeroPhoto from '../components/HeroPhoto'
-import { FIELDS, FILTER_CHIPS } from '../data/mockData'
+import { supabase } from '../lib/supabase'
+import { normalizeField } from '../lib/fieldUtils'
+import { FILTER_CHIPS } from '../data/mockData'
 
 export default function DiscoverPage() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [selectedId, setSelectedId] = useState(null)
+  const [fields, setFields] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    async function fetchFields() {
+      const { data, error } = await supabase
+        .from('fields')
+        .select('*')
+        .eq('listing_status', 'published')
+        .order('name')
+
+      if (error) {
+        setError(error.message)
+      } else {
+        setFields((data ?? []).map(normalizeField))
+      }
+      setLoading(false)
+    }
+    fetchFields()
+  }, [])
 
   const filtered =
     activeFilter === 'All'
-      ? FIELDS
-      : FIELDS.filter((f) => f.field_types.includes(activeFilter))
+      ? fields
+      : fields.filter((f) => f.field_types.includes(activeFilter))
 
   return (
     <div className="md:hidden flex flex-col h-screen bg-white">
@@ -69,56 +92,64 @@ export default function DiscoverPage() {
         </div>
         <p className="text-xs text-gray-500 text-right px-4 pb-2">within 60 km</p>
 
-        <div className="divide-y divide-gray-100">
-          {filtered.map((field) => (
-            <button
-              key={field.id}
-              onClick={() => navigate(`/field/${field.id}`)}
-              className="w-full text-left flex gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
-            >
-              <HeroPhoto className="w-16 h-16 flex-shrink-0 rounded-lg text-[8px]" label="FIELD" />
+        {loading ? (
+          <div className="py-16 text-center text-gray-400 text-sm">Loading fields…</div>
+        ) : error ? (
+          <div className="py-16 text-center text-red-400 text-sm px-6">{error}</div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center text-gray-400 text-sm">No fields match this filter.</div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {filtered.map((field) => (
+              <button
+                key={field.id}
+                onClick={() => navigate(`/field/${field.id}`)}
+                className="w-full text-left flex gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+              >
+                <HeroPhoto className="w-16 h-16 flex-shrink-0 rounded-lg text-[8px]" label="FIELD" />
 
-              <div className="flex-1 min-w-0">
-                {/* Name + fav */}
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-sm font-semibold text-gray-900 leading-tight">{field.name}</h3>
-                  <button onClick={(e) => e.stopPropagation()} className="text-gray-300 flex-shrink-0 mt-0.5">♡</button>
+                <div className="flex-1 min-w-0">
+                  {/* Name + fav */}
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-gray-900 leading-tight">{field.name}</h3>
+                    <button onClick={(e) => e.stopPropagation()} className="text-gray-300 flex-shrink-0 mt-0.5">♡</button>
+                  </div>
+
+                  {/* City + distance */}
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {field.city}, {field.province}
+                    {field.distance_km != null && ` · ${field.distance_km} km`}
+                  </p>
+
+                  {/* Status + hours */}
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <StatusBadge status={field.weather_status} />
+                    {field.today_hours && (
+                      <span className="text-xs text-gray-500">🕐 {field.today_hours} today</span>
+                    )}
+                  </div>
+
+                  {/* Star rating — hidden until reviews are live (Phase 2) */}
+                  <div className="mt-1.5">
+                    <StarRating rating={field.rating} count={field.review_count} />
+                  </div>
+
+                  {/* Field type chips */}
+                  <div className="flex gap-1 mt-1 flex-wrap">
+                    {field.field_types.map((t) => (
+                      <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{t}</span>
+                    ))}
+                  </div>
+
+                  {/* Active players — beneath field type chips */}
+                  <div className="mt-1">
+                    <ActivePlayers field={field} size="sm" />
+                  </div>
                 </div>
-
-                {/* City + distance */}
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {field.city}, {field.province}
-                  {field.distance_km != null && ` · ${field.distance_km} km`}
-                </p>
-
-                {/* Status + hours */}
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <StatusBadge status={field.weather_status} />
-                  {field.today_hours && (
-                    <span className="text-xs text-gray-500">🕐 {field.today_hours} today</span>
-                  )}
-                </div>
-
-                {/* Star rating */}
-                <div className="mt-1.5">
-                  <StarRating rating={field.rating} count={field.review_count} />
-                </div>
-
-                {/* Field type chips */}
-                <div className="flex gap-1 mt-1 flex-wrap">
-                  {field.field_types.map((t) => (
-                    <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{t}</span>
-                  ))}
-                </div>
-
-                {/* Active players — beneath field type chips */}
-                <div className="mt-1">
-                  <ActivePlayers field={field} size="sm" />
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="h-20" />
       </div>

@@ -134,35 +134,7 @@ create policy "Anyone can submit crowd reports"
 -- (the aggregated result is read from the fields table instead)
 
 -- ─────────────────────────────────────────────
--- pg_cron jobs (requires pg_cron extension enabled in Supabase dashboard)
+-- pg_cron jobs are in supabase/cron.sql
+-- Run that file separately AFTER enabling the pg_cron extension:
+--   Supabase dashboard → Database → Extensions → pg_cron → Enable
 -- ─────────────────────────────────────────────
-
--- Midnight ET reset: clear active player data on all fields
--- Note: Supabase runs in UTC. Midnight ET (EST) = 05:00 UTC; EDT = 04:00 UTC.
--- Use 05:00 UTC as a safe year-round value.
-select cron.schedule(
-  'midnight-crowd-reset',
-  '0 5 * * *',
-  $$
-    update public.fields
-    set
-      active_players_now = null,
-      crowd_report_count = 0,
-      crowd_report_last_updated = null;
-  $$
-);
-
--- Trigger Edge Function aggregation every 5 minutes
--- The Edge Function does the weighted average and writes back to fields.
--- Replace YOUR_PROJECT_REF and YOUR_ANON_KEY with real values.
-select cron.schedule(
-  'aggregate-crowd-reports',
-  '*/5 * * * *',
-  $$
-    select net.http_post(
-      url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/aggregate_crowd_reports',
-      headers := '{"Authorization": "Bearer YOUR_ANON_KEY"}'::jsonb,
-      body := '{}'::jsonb
-    );
-  $$
-);

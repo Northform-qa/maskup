@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import StatusBadge from '../components/StatusBadge'
 import FieldTypeChip from '../components/FieldTypeChip'
 import HeroPhoto from '../components/HeroPhoto'
 import ActivePlayers from '../components/ActivePlayers'
-import { FIELDS } from '../data/mockData'
+import { supabase } from '../lib/supabase'
+import { normalizeField } from '../lib/fieldUtils'
 
 const EVENT_TYPE_LABELS = {
   big_game: 'Big Game',
@@ -27,9 +28,46 @@ export default function FieldDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [photoIndex] = useState(0)
+  const [field, setField] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const totalPhotos = 24
 
-  const field = FIELDS.find((f) => f.id === id) ?? FIELDS.find((f) => f.id === '2') ?? FIELDS[0]
+  useEffect(() => {
+    async function fetchField() {
+      const { data, error } = await supabase
+        .from('fields')
+        .select('*, events(*)')
+        .eq('id', id)
+        .single()
+
+      if (error) {
+        setError(error.message)
+      } else {
+        setField(normalizeField(data))
+      }
+      setLoading(false)
+    }
+    fetchField()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-gray-400 text-sm">Loading…</p>
+      </div>
+    )
+  }
+
+  if (error || !field) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3 px-6">
+        <p className="text-red-400 text-sm text-center">{error ?? 'Field not found.'}</p>
+        <button onClick={() => navigate(-1)} className="text-sm text-brand font-medium">← Go back</button>
+      </div>
+    )
+  }
+
   const isIndoor = field.field_types.includes('Indoor')
 
   return (
@@ -73,13 +111,17 @@ export default function FieldDetailPage() {
 
         <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{field.name}</h1>
 
-        <div className="flex items-center gap-1 mb-3">
-          {'★★★★★'.split('').map((_, i) => (
-            <span key={i} className={`text-lg ${i < Math.floor(field.rating) ? 'text-yellow-400' : 'text-gray-200'}`}>★</span>
-          ))}
-          <span className="text-sm font-semibold text-gray-800 ml-0.5">{field.rating?.toFixed(1)}</span>
-          <span className="text-sm text-gray-400">({field.review_count} reviews)</span>
-        </div>
+        {field.rating != null && (
+          <div className="flex items-center gap-1 mb-3">
+            {'★★★★★'.split('').map((_, i) => (
+              <span key={i} className={`text-lg ${i < Math.floor(field.rating) ? 'text-yellow-400' : 'text-gray-200'}`}>★</span>
+            ))}
+            <span className="text-sm font-semibold text-gray-800 ml-0.5">{field.rating.toFixed(1)}</span>
+            {field.review_count != null && (
+              <span className="text-sm text-gray-400">({field.review_count} reviews)</span>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-1.5 mb-5">
           <StatusBadge status={field.weather_status} />

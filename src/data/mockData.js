@@ -211,7 +211,7 @@ export const FIELDS = [
     website: 'combatpursuit.com',
     description:
       "GTA's closest outdoor paintball park — only 15 minutes from Toronto city limits. Separate beginner and advanced games. Multiple unique outdoor playing fields. Also offers MicroBall low-impact and Airsoft.",
-    field_types: ['Woodball', 'Scenario', 'Speedball'],
+    field_types: ['Woodball', 'Scenario', 'Speedball', 'Airsoft'],
     num_fields: 8,
     typical_capacity: 150,
     active_players_now: 22,
@@ -252,7 +252,7 @@ export const FIELDS = [
     website: 'dmzpaintball.com',
     description:
       'Central to Niagara, located in St. Catharines. Open all year with both indoor and outdoor fields. Best pro shop in Niagara with over 300 paintball and airsoft guns in stock. Great for birthday parties and bachelor parties.',
-    field_types: ['Woodball', 'Speedball', 'Scenario'],
+    field_types: ['Woodball', 'Speedball', 'Scenario', 'Airsoft'],
     num_fields: 5,
     typical_capacity: 100,
     active_players_now: null,
@@ -339,7 +339,7 @@ export const PENDING_FIELDS = [
   },
 ]
 
-export const FILTER_CHIPS = ['All', 'Woodball', 'Speedball', 'Scenario', 'Hyperball', 'Indoor']
+export const FILTER_CHIPS = ['All', 'Woodball', 'Speedball', 'Scenario', 'Airsoft', 'Hyperball', 'Indoor']
 
 export const MOCK_OWNER_DASHBOARD = {
   display_name: 'CZ',
