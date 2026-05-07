@@ -1,0 +1,231 @@
+import { useParams, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import StatusBadge from '../components/StatusBadge'
+import FieldTypeChip from '../components/FieldTypeChip'
+import HeroPhoto from '../components/HeroPhoto'
+import ActivePlayers from '../components/ActivePlayers'
+import { FIELDS } from '../data/mockData'
+
+const EVENT_TYPE_LABELS = {
+  big_game: 'Big Game',
+  league: 'League',
+  tournament: 'Tournament',
+  walk_on: 'Walk-on',
+}
+
+const EVENT_TYPE_COLORS = {
+  big_game: 'bg-red-100 text-red-700',
+  league: 'bg-blue-100 text-blue-700',
+  tournament: 'bg-purple-100 text-purple-700',
+  walk_on: 'bg-gray-100 text-gray-600',
+}
+
+const DAYS_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const TODAY_DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()]
+
+export default function FieldDetailPage() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const [photoIndex] = useState(0)
+  const totalPhotos = 24
+
+  const field = FIELDS.find((f) => f.id === id) ?? FIELDS.find((f) => f.id === '2') ?? FIELDS[0]
+  const isIndoor = field.field_types.includes('Indoor')
+
+  return (
+    <div className="min-h-screen bg-white pb-24">
+
+      {/* ── 1 + 2. Hero photo with top bar overlaid ── */}
+      <div className="relative">
+        <HeroPhoto className="h-64 w-full" label="HERO PHOTO · FIELD" />
+
+        <div className="absolute top-0 left-0 right-0 pt-12 px-4 flex items-center justify-between">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow text-gray-700"
+          >
+            ←
+          </button>
+          <div className="flex gap-2">
+            <button className="w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow text-gray-700 text-sm">
+              ↗
+            </button>
+            <button className="w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow text-gray-700">
+              ♡
+            </button>
+          </div>
+        </div>
+
+        <div className="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full">
+          📷 {photoIndex + 1} / {totalPhotos}
+        </div>
+      </div>
+
+      <div className="px-4 pt-4">
+
+        {/* ── 3. Field header ── */}
+        <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+          <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+          </svg>
+          {field.city}, {field.province}{field.distance_km != null && ` · ${field.distance_km} km away`}
+        </div>
+
+        <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{field.name}</h1>
+
+        <div className="flex items-center gap-1 mb-3">
+          {'★★★★★'.split('').map((_, i) => (
+            <span key={i} className={`text-lg ${i < Math.floor(field.rating) ? 'text-yellow-400' : 'text-gray-200'}`}>★</span>
+          ))}
+          <span className="text-sm font-semibold text-gray-800 ml-0.5">{field.rating?.toFixed(1)}</span>
+          <span className="text-sm text-gray-400">({field.review_count} reviews)</span>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5 mb-5">
+          <StatusBadge status={field.weather_status} />
+          {field.today_hours && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+              🕐 {field.today_hours}
+            </span>
+          )}
+          {field.walk_ins && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+              ✓ Walk-ins OK
+            </span>
+          )}
+        </div>
+
+        {/* ── 4. Stat row — 3 stats, no capacity ── */}
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          {[
+            { icon: '⚡', label: 'FIELDS', value: field.num_fields },
+            { icon: '💰', label: 'PRICING', value: field.pricing?.split('–')[0]?.trim() ?? '—' },
+            { icon: '🎿', label: 'RENTALS', value: field.rentals_available ? 'Yes' : 'No' },
+          ].map((stat) => (
+            <div key={stat.label} className="border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-1">
+              <span className="text-xl">{stat.icon}</span>
+              <span className="text-[9px] text-gray-400 uppercase tracking-wide font-medium">{stat.label}</span>
+              <span className="text-sm font-bold text-gray-800 text-center leading-tight">{stat.value}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* ── 5. Active players — own section ── */}
+        <div className="bg-gray-50 rounded-xl p-4 mb-5">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Players on-site now</p>
+          <ActivePlayers field={field} size="md" />
+          <p className="text-xs text-gray-400 mt-1.5">Community estimate · reports reset nightly</p>
+          <button className="mt-2 text-xs text-brand font-medium hover:underline">
+            Are you here? Submit a report
+          </button>
+        </div>
+
+        {/* ── 6. Game types ── */}
+        <div className="mb-5">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Game types</h2>
+          <div className="flex flex-wrap gap-1.5">
+            {field.field_types.map((t) => (
+              <FieldTypeChip key={t} type={t} />
+            ))}
+          </div>
+        </div>
+
+        {/* ── 7. Upcoming events ── */}
+        {field.events.length > 0 && (
+          <div className="mb-5">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Upcoming events</h2>
+            <div className="space-y-2">
+              {field.events.slice(0, 3).map((event) => (
+                <button
+                  key={event.id}
+                  className="w-full text-left flex items-center gap-3 bg-orange-50 rounded-xl p-3 hover:bg-orange-100 transition-colors"
+                >
+                  <div className="flex-shrink-0 w-10 text-center">
+                    <div className="text-xs font-bold text-orange-600 uppercase leading-none">
+                      {event.display_date?.split(' ')[0]}
+                    </div>
+                    <div className="text-xl font-bold text-orange-700 leading-tight">
+                      {event.display_date?.split(' ')[1]}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="mb-0.5">
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${EVENT_TYPE_COLORS[event.event_type]}`}>
+                        {EVENT_TYPE_LABELS[event.event_type]}
+                      </span>
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800 leading-tight">{event.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {event.start_time}–{event.end_time} · {event.spots_remaining} spots left
+                    </p>
+                  </div>
+                  <span className="text-gray-400 text-lg flex-shrink-0">›</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── 8. About this field ── */}
+        <div className="mb-5">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">About this field</h2>
+          <p className="text-sm text-gray-600 leading-relaxed">{field.description}</p>
+        </div>
+
+        {/* ── 9. Hours ── */}
+        <div className="mb-5">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Hours</h2>
+          <div className="divide-y divide-gray-100">
+            {DAYS_ORDER.map((day) => {
+              const hours = field.hours?.[day] ?? 'Closed'
+              const isToday = day === TODAY_DAY
+              return (
+                <div
+                  key={day}
+                  className={`flex items-center justify-between py-2 ${isToday ? '-mx-1 px-1 bg-brand/5 rounded' : ''}`}
+                >
+                  <span className={`text-sm ${isToday ? 'text-brand font-semibold' : 'text-gray-600'}`}>
+                    {day}
+                    {isToday && <span className="ml-2 text-[10px] bg-brand text-white px-1.5 py-0.5 rounded-full font-medium">Today</span>}
+                  </span>
+                  <span className={`text-sm ${hours === 'Closed' ? 'text-gray-400' : isToday ? 'text-brand font-semibold' : 'text-gray-700'}`}>
+                    {hours}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-xs text-gray-400 mt-2.5">
+            {isIndoor || !field.seasonal_start
+              ? 'Open year-round'
+              : `Seasonal: ${new Date(field.seasonal_start).toLocaleDateString('en-CA', { month: 'long' })} – ${new Date(field.seasonal_end).toLocaleDateString('en-CA', { month: 'long' })}`}
+          </p>
+        </div>
+
+        {/* ── 10. Rental gear ── */}
+        <div className="mb-5">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Rental gear</h2>
+          {field.rentals_available ? (
+            <div className="flex items-start gap-2">
+              <span className="text-brand text-sm mt-0.5 flex-shrink-0">✓</span>
+              <p className="text-sm text-gray-600">{field.rental_pricing}</p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">No rentals — bring your own gear</p>
+          )}
+        </div>
+
+      </div>
+
+      {/* ── 11. Sticky footer ── */}
+      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 flex items-center gap-3 px-4 py-3 z-50">
+        <button className="flex-1 py-3 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
+          <span>⊕</span> Directions
+        </button>
+        <button className="flex-1 py-3 bg-brand rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 hover:bg-brand-dark transition-colors">
+          <span>📞</span> Call to book
+        </button>
+      </div>
+    </div>
+  )
+}
