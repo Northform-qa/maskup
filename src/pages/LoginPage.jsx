@@ -25,15 +25,21 @@ export default function LoginPage() {
       return
     }
 
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', data.user.id)
-      .single()
+    try {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', data.user.id)
+        .single()
 
-    if (profile?.role === 'owner') navigate('/owner-dashboard', { replace: true })
-    else if (profile?.role === 'admin') navigate('/admin', { replace: true })
-    else navigate(from, { replace: true })
+      if (profile?.role === 'owner') navigate('/owner-dashboard', { replace: true })
+      else if (profile?.role === 'admin') navigate('/admin', { replace: true })
+      else navigate(from, { replace: true })
+    } catch {
+      navigate(from, { replace: true })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

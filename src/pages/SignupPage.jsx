@@ -16,6 +16,15 @@ export default function SignupPage() {
     setError(null)
     setLoading(true)
 
+    if (displayName.trim()) {
+      const { data: taken } = await supabase.rpc('is_display_name_taken', { name: displayName.trim() })
+      if (taken) {
+        setError('That display name is already taken.')
+        setLoading(false)
+        return
+      }
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,

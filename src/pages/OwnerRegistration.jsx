@@ -443,6 +443,15 @@ export default function OwnerRegistration() {
     setError(null)
     setSubmitting(true)
 
+    if (formData.display_name.trim()) {
+      const { data: taken } = await supabase.rpc('is_display_name_taken', { name: formData.display_name.trim() })
+      if (taken) {
+        setError('That display name is already taken.')
+        setSubmitting(false)
+        return
+      }
+    }
+
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
