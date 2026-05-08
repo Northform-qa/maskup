@@ -119,12 +119,14 @@ export default function DirectoryPage() {
                       {/* Name + fav */}
                       <div className="flex items-start justify-between gap-1">
                         <h3 className="text-sm font-semibold text-gray-900 leading-tight">{field.name}</h3>
-                        <button
+                        <span
+                          role="button"
+                          tabIndex={0}
                           onClick={(e) => e.stopPropagation()}
                           className={`ml-1 flex-shrink-0 text-sm ${active ? 'text-red-400' : 'text-gray-300'}`}
                         >
                           {active ? '♥' : '♡'}
-                        </button>
+                        </span>
                       </div>
 
                       {/* City + distance */}

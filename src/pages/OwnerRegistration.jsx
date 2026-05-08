@@ -202,8 +202,8 @@ function Step2({ data, onChange }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Max group size</label>
           <input
             type="number"
-            value={data.max_capacity}
-            onChange={(e) => onChange('max_capacity', e.target.value)}
+            value={data.typical_capacity}
+            onChange={(e) => onChange('typical_capacity', e.target.value)}
             placeholder="e.g. 40"
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
           />
@@ -413,7 +413,7 @@ export default function OwnerRegistration() {
     address: '',
     field_types: ['Woodball', 'Scenario'],
     num_fields: '5',
-    max_capacity: '',
+    typical_capacity: '',
     rentals: ['Markers', 'Masks'],
     hours: {
       Mon: { closed: true },

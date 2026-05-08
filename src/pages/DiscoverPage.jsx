@@ -112,7 +112,7 @@ export default function DiscoverPage() {
                   {/* Name + fav */}
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="text-sm font-semibold text-gray-900 leading-tight">{field.name}</h3>
-                    <button onClick={(e) => e.stopPropagation()} className="text-gray-300 flex-shrink-0 mt-0.5">♡</button>
+                    <span role="button" tabIndex={0} onClick={(e) => e.stopPropagation()} className="text-gray-300 flex-shrink-0 mt-0.5">♡</span>
                   </div>
 
                   {/* City + distance */}

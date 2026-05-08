@@ -3,7 +3,13 @@ const DAY_KEYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 export function getTodayHours(hours) {
   const key = DAY_KEYS[new Date().getDay()]
   const val = hours?.[key]
-  return val && val !== 'Closed' ? val : null
+  if (!val) return null
+  // String format (legacy seed data): 'Mon: "9am–5pm"' or '"Closed"'
+  if (typeof val === 'string') return val !== 'Closed' ? val : null
+  // Object format (form submissions): {open: '09:00', close: '17:00'} or {closed: true}
+  if (val.closed) return null
+  if (val.open && val.close) return `${formatTime(val.open)}–${formatTime(val.close)}`
+  return null
 }
 
 // Converts Supabase time strings ('10:00:00') to display format ('10am', '10:30am')
