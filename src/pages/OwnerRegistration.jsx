@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 
 const STEPS = ['Account', 'Field details', 'Hours & pricing', 'Photos & submit']
 
@@ -403,6 +404,8 @@ export default function OwnerRegistration() {
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState(null)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -436,9 +439,63 @@ export default function OwnerRegistration() {
     setFormData((prev) => ({ ...prev, [key]: value }))
   }
 
+  async function handleSubmit() {
+    setError(null)
+    setSubmitting(true)
+
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: {
+          display_name: formData.display_name.trim() || null,
+          role: 'owner',
+        },
+      },
+    })
+
+    if (signUpError) {
+      setError(signUpError.message)
+      setSubmitting(false)
+      return
+    }
+
+    const { error: fieldError } = await supabase.from('fields').insert({
+      owner_id: authData.user.id,
+      name: formData.name.trim(),
+      city: formData.city.trim(),
+      province: formData.province,
+      address: formData.address.trim() || null,
+      field_types: formData.field_types,
+      num_fields: formData.num_fields ? parseInt(formData.num_fields, 10) : null,
+      typical_capacity: formData.typical_capacity ? parseInt(formData.typical_capacity, 10) : null,
+      rentals_available: formData.rentals.length > 0,
+      hours: formData.hours,
+      seasonal_start: formData.seasonal_start || null,
+      seasonal_end: formData.seasonal_end || null,
+      pricing: formData.rental_pricing || null,
+      phone: formData.phone || null,
+      website: formData.website || null,
+      description: formData.description || null,
+      listing_status: 'pending',
+    })
+
+    if (fieldError) {
+      setError(fieldError.message)
+      setSubmitting(false)
+      return
+    }
+
+    setSubmitted(true)
+    setSubmitting(false)
+  }
+
   const handleNext = () => {
-    if (step < STEPS.length - 1) setStep((s) => s + 1)
-    else setSubmitted(true)
+    if (step < STEPS.length - 1) {
+      setStep((s) => s + 1)
+    } else {
+      handleSubmit()
+    }
   }
 
   const handleBack = () => setStep((s) => Math.max(0, s - 1))
@@ -480,11 +537,17 @@ export default function OwnerRegistration() {
               <StepComponent data={formData} onChange={handleChange} />
 
               {/* Nav buttons */}
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+              {error && (
+                <p className="mt-4 text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {error}
+                </p>
+              )}
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
                 {step > 0 ? (
                   <button
                     onClick={handleBack}
-                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+                    disabled={submitting}
+                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-40"
                   >
                     ← Back
                   </button>
@@ -495,10 +558,13 @@ export default function OwnerRegistration() {
                   <span className="text-xs text-gray-400">Step {step + 1} of 4</span>
                   <button
                     onClick={handleNext}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-dark transition-colors"
+                    disabled={submitting}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-60"
                   >
                     {step < 3 ? (
                       <>Next: {STEPS[step + 1]} <span>›</span></>
+                    ) : submitting ? (
+                      'Submitting…'
                     ) : (
                       'Submit listing ✓'
                     )}

@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import HeroPhoto from '../components/HeroPhoto'
 import FieldTypeChip from '../components/FieldTypeChip'
-import { MOCK_OWNER_DASHBOARD } from '../data/mockData'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
+import { normalizeField } from '../lib/fieldUtils'
 
 const STATUS_OPTIONS = [
   {
@@ -64,19 +66,89 @@ function StatCard({ label, value, delta, up }) {
   )
 }
 
+function initials(name) {
+  if (!name) return '?'
+  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
+}
+
 export default function OwnerDashboard() {
-  const { field, events, stats } = MOCK_OWNER_DASHBOARD
+  const { user, profile } = useAuth()
+  const [field, setField] = useState(null)
+  const [events, setEvents] = useState([])
+  const [loadingField, setLoadingField] = useState(true)
+  const [fetchError, setFetchError] = useState(null)
   const [weatherStatus, setWeatherStatus] = useState('open')
   const [overridePlayers, setOverridePlayers] = useState('')
   const [savedPlayers, setSavedPlayers] = useState(null)
 
+  useEffect(() => {
+    if (!user) return
+    async function fetchField() {
+      const { data, error } = await supabase
+        .from('fields')
+        .select('*, events(*)')
+        .eq('owner_id', user.id)
+        .single()
+
+      if (error) {
+        setFetchError(error.message)
+      } else if (data) {
+        const normalized = normalizeField(data)
+        setField(normalized)
+        setEvents(normalized.events)
+        setWeatherStatus(data.weather_status ?? 'open')
+        if (data.active_players_now != null) setSavedPlayers(data.active_players_now)
+      }
+      setLoadingField(false)
+    }
+    fetchField()
+  }, [user])
+
+  async function handleWeatherChange(key) {
+    setWeatherStatus(key)
+    if (!field) return
+    await supabase.from('fields').update({ weather_status: key }).eq('id', field.id)
+  }
+
+  async function handleSavePlayers() {
+    const n = parseInt(overridePlayers, 10)
+    if (!Number.isNaN(n) && n >= 0) {
+      setSavedPlayers(n)
+      if (field) {
+        await supabase.from('fields').update({ active_players_now: n }).eq('id', field.id)
+      }
+    }
+  }
+
   const doneCount = HEALTH_ITEMS.filter((i) => i.done).length
   const allDone = doneCount === HEALTH_ITEMS.length
 
-  function handleSavePlayers() {
-    const n = parseInt(overridePlayers, 10)
-    if (!Number.isNaN(n) && n >= 0) setSavedPlayers(n)
+  if (loadingField) {
+    return (
+      <div className="min-h-screen bg-cream-100 flex items-center justify-center">
+        <span className="text-sm text-gray-400">Loading dashboard…</span>
+      </div>
+    )
   }
+
+  if (fetchError) {
+    return (
+      <div className="min-h-screen bg-cream-100 flex items-center justify-center px-4">
+        <p className="text-sm text-red-500">{fetchError}</p>
+      </div>
+    )
+  }
+
+  if (!field) {
+    return (
+      <div className="min-h-screen bg-cream-100 flex items-center justify-center px-4">
+        <p className="text-sm text-gray-500">No field found for your account.</p>
+      </div>
+    )
+  }
+
+  const isPending = field.listing_status === 'pending'
+  const avatarInitials = initials(profile?.display_name ?? user?.email ?? '')
 
   return (
     <div className="min-h-screen bg-cream-100">
@@ -103,12 +175,19 @@ export default function OwnerDashboard() {
               <p className="text-[10px] font-medium uppercase tracking-widest text-gray-400 mb-1">Owner Dashboard</p>
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl font-bold text-gray-900">{field.name}</h1>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-brand text-xs font-semibold rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand" />
-                  Live
-                </span>
+                {isPending ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    Pending approval
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-brand text-xs font-semibold rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand" />
+                    Live
+                  </span>
+                )}
                 <span className="text-sm text-gray-400">
-                  Approved {field.approved_date} · listing #{field.listing_number}
+                  {field.city}, {field.province}
                 </span>
               </div>
             </div>
@@ -126,20 +205,20 @@ export default function OwnerDashboard() {
             <p className="text-[10px] font-medium uppercase tracking-widest text-gray-400">Owner dashboard</p>
             <h1 className="text-xl font-bold text-gray-900 mt-0.5 leading-tight">{field.name}</h1>
           </div>
-          <button className="w-9 h-9 rounded-full bg-brand flex-shrink-0 flex items-center justify-center text-white text-sm font-bold">
-            CZ
-          </button>
+          <div className="w-9 h-9 rounded-full bg-brand flex-shrink-0 flex items-center justify-center text-white text-sm font-bold">
+            {avatarInitials}
+          </div>
         </div>
       </div>
 
       {/* ── Main content ── */}
       <div className="px-4 py-5 md:max-w-6xl md:mx-auto md:px-6 md:py-8">
 
-        {/* Stat cards — full-width row on both layouts */}
+        {/* Stat cards — placeholder until analytics are wired */}
         <div className="flex gap-2 md:gap-4 mb-4 md:mb-6">
-          <StatCard label={stats.views.label} value={stats.views.value} delta={stats.views.delta} up={stats.views.up} />
-          <StatCard label={stats.saves.label} value={stats.saves.value} delta={stats.saves.delta} up={stats.saves.up} />
-          <StatCard label={stats.calls.label} value={stats.calls.value} delta={stats.calls.delta} up={stats.calls.up} />
+          <StatCard label="Profile views this week" value="—" delta="—" up={true} />
+          <StatCard label="Times saved" value="—" delta="—" up={true} />
+          <StatCard label="Calls to book" value="—" delta="—" up={true} />
         </div>
 
         {/*
@@ -194,7 +273,7 @@ export default function OwnerDashboard() {
                 return (
                   <button
                     key={opt.key}
-                    onClick={() => setWeatherStatus(opt.key)}
+                    onClick={() => handleWeatherChange(opt.key)}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
                       active ? `${opt.bg} ${opt.border}` : 'bg-white border-gray-200 hover:bg-gray-50'
                     }`}
