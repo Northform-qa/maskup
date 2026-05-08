@@ -171,7 +171,7 @@ export default function AdminDashboard() {
     setFields((prev) => prev.filter((f) => f.id !== id))
   }
 
-  const handleReject = (id, reason, note) => {
+  const handleReject = (id, _reason, _note) => {
     setFields((prev) => prev.filter((f) => f.id !== id))
   }
 

@@ -33,7 +33,6 @@ export function getActivePlayers(field) {
 }
 
 // For mock data we simulate different crowd states
-const NOW = new Date().toISOString()
 const FRESH_45M_AGO = new Date(Date.now() - 45 * 60 * 1000).toISOString()
 const STALE_3H_AGO = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
 

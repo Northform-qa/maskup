@@ -1,4 +1,4 @@
-import { FIELDS } from '../data/mockData'
+
 
 const PIN_POSITIONS = [
   { id: '1', x: 42, y: 38 },

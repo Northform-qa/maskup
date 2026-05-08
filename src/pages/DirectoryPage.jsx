@@ -21,7 +21,7 @@ export default function DirectoryPage() {
   const [selectedId, setSelectedId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [sort, setSort] = useState('Distance')
+  const [sort] = useState('Distance')
   const navigate = useNavigate()
 
   useEffect(() => {
