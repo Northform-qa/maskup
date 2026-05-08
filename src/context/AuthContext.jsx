@@ -56,7 +56,8 @@ export function AuthProvider({ children }) {
 
   async function signOut() {
     await supabase.auth.signOut()
-    // user/profile cleared automatically via onAuthStateChange
+    setUser(null)
+    setProfile(null)
   }
 
   return (
