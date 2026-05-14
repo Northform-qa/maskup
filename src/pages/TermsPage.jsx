@@ -407,9 +407,9 @@ const SECTIONS = [
           <p className="font-semibold text-gray-900 mb-1">By mail</p>
           <address className="not-italic text-sm text-gray-700">
             Northform QA<br />
-            PO BOX 99900 YE 904<br />
-            630 RPO Rossland Garden<br />
-            Whitby, Ontario L1N 6G2<br />
+            PO BOX 99900 YE 904 630<br />
+            RPO Rossland Garden<br />
+            Whitby, Ontario L1R 0M1<br />
             Canada
           </address>
         </div>
@@ -434,7 +434,7 @@ export default function TermsPage() {
         <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8">
           <p className="font-semibold text-gray-900 mb-2">Agreement to Our Legal Terms</p>
           <p className="text-gray-700 text-sm leading-relaxed mb-3">
-            We are <strong>Northform QA</strong> ("Company," "we," "us," "our"), a company registered in Canada at PO BOX 99900 YE 904, 630 RPO Rossland Garden, Whitby, Ontario L1N 6G2. We operate <strong>maskup.gg</strong> (the "Site"), the mobile application <strong>MaskUp</strong> (the "App"), and any other related products and services that refer or link to these legal terms (collectively, the "Services").
+            We are <strong>Northform QA</strong> ("Company," "we," "us," "our"), a company registered in Canada at PO BOX 99900 YE 904 630, RPO Rossland Garden, Whitby, Ontario L1R 0M1. We operate <strong>maskup.gg</strong> (the "Site"), the mobile application <strong>MaskUp</strong> (the "App"), and any other related products and services that refer or link to these legal terms (collectively, the "Services").
           </p>
           <p className="text-gray-700 text-sm leading-relaxed mb-3">
             MaskUp.gg is an Ontario-based paintball and airsoft field directory. Players use MaskUp.gg to discover fields near them, view real-time open/closed status and weather conditions, see crowd-sourced player counts, and find upcoming events. Field owners can register their field, manage their listing, post events, and update their field's live status. The platform is community-first and free for all players to use.

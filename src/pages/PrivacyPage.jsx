@@ -92,7 +92,7 @@ const SECTIONS = [
           <li>Authentication tokens stored in secure, httpOnly cookies</li>
           <li>Regular security reviews of dependencies and access controls</li>
         </ul>
-        <p className="text-gray-700 text-sm">No method of transmission or storage is 100% secure. If you discover a security vulnerability, please report it to <a href="mailto:privacy@maskup.gg" className="text-brand underline">privacy@maskup.gg</a> rather than disclosing it publicly.</p>
+        <p className="text-gray-700 text-sm">No method of transmission or storage is 100% secure. If you discover a security vulnerability, please report it to <a href="mailto:support@maskup.gg" className="text-brand underline">support@maskup.gg</a> rather than disclosing it publicly.</p>
       </>
     ),
   },
@@ -119,7 +119,7 @@ const SECTIONS = [
             </div>
           ))}
         </div>
-        <p className="text-gray-700 text-sm">To exercise any of these rights, email <a href="mailto:privacy@maskup.gg" className="text-brand underline">privacy@maskup.gg</a>. We will respond within 30 days.</p>
+        <p className="text-gray-700 text-sm">To exercise any of these rights, email <a href="mailto:support@maskup.gg" className="text-brand underline">support@maskup.gg</a>. We will respond within 30 days.</p>
       </>
     ),
   },
@@ -183,7 +183,7 @@ const SECTIONS = [
     title: "Children's Privacy",
     short: 'MaskUp.gg is not intended for children under 13. We do not knowingly collect their data.',
     content: (
-      <p className="text-gray-700">MaskUp.gg is not directed at children under the age of 13. We do not knowingly collect personal information from children under 13. If you believe a child has provided us with personal information, contact us at <a href="mailto:privacy@maskup.gg" className="text-brand underline">privacy@maskup.gg</a> and we will delete it promptly.</p>
+      <p className="text-gray-700">MaskUp.gg is not directed at children under the age of 13. We do not knowingly collect personal information from children under 13. If you believe a child has provided us with personal information, contact us at <a href="mailto:support@maskup.gg" className="text-brand underline">support@maskup.gg</a> and we will delete it promptly.</p>
     ),
   },
   {
@@ -287,12 +287,18 @@ export default function PrivacyPage() {
           <div className="grid sm:grid-cols-2 gap-4 text-sm text-gray-700">
             <div>
               <p className="font-semibold text-gray-900 mb-1">By email</p>
-              <a href="mailto:privacy@maskup.gg" className="text-brand underline">privacy@maskup.gg</a>
+              <a href="mailto:support@maskup.gg" className="text-brand underline">support@maskup.gg</a>
               <p className="text-gray-500 text-xs mt-0.5">Response within 30 days</p>
             </div>
             <div>
               <p className="font-semibold text-gray-900 mb-1">By mail</p>
-              <p>Northform QA<br />Privacy Officer<br />Ontario, Canada</p>
+              <address className="not-italic text-sm text-gray-700 space-y-0.5">
+                <p>Northform QA</p>
+                <p>PO BOX 99900 YE 904 630</p>
+                <p>RPO Rossland Garden</p>
+                <p>Whitby, Ontario L1R 0M1</p>
+                <p>Canada</p>
+              </address>
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
