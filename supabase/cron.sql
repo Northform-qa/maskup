@@ -24,6 +24,20 @@ select cron.schedule(
   $$
 );
 
+-- Fetch weather for all published fields every hour.
+-- Replace YOUR_PROJECT_REF and YOUR_SERVICE_ROLE_KEY with real values.
+select cron.schedule(
+  'fetch-weather-hourly',
+  '0 * * * *',
+  $$
+    select net.http_post(
+      url     := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/fetch_weather',
+      headers := '{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb,
+      body    := '{}'::jsonb
+    );
+  $$
+);
+
 -- Trigger the crowd aggregation Edge Function every 5 minutes.
 -- Replace YOUR_PROJECT_REF and YOUR_SERVICE_ROLE_KEY with real values.
 -- Use the service role key here (server-side only — never expose in client code).

@@ -5,6 +5,7 @@ import StatusBadge from '../components/StatusBadge'
 import StarRating from '../components/StarRating'
 import ActivePlayers from '../components/ActivePlayers'
 import HeroPhoto from '../components/HeroPhoto'
+import WeatherChip from '../components/WeatherChip'
 import { supabase } from '../lib/supabase'
 import { normalizeField } from '../lib/fieldUtils'
 import { FILTER_CHIPS } from '../data/mockData'
@@ -19,16 +20,23 @@ export default function DiscoverPage() {
 
   useEffect(() => {
     async function fetchFields() {
-      const { data, error } = await supabase
-        .from('fields')
-        .select('*')
-        .eq('listing_status', 'published')
-        .order('name')
+      const today = new Date().toISOString().split('T')[0]
+      const [{ data, error }, { data: goingRows }] = await Promise.all([
+        supabase.from('fields').select('*').eq('listing_status', 'published').order('name'),
+        supabase.from('going_today').select('field_id').eq('date', today),
+      ])
 
       if (error) {
         setError(error.message)
       } else {
-        setFields((data ?? []).map(normalizeField))
+        const countByField = {}
+        goingRows?.forEach((r) => {
+          countByField[r.field_id] = (countByField[r.field_id] || 0) + 1
+        })
+        setFields((data ?? []).map((f) => ({
+          ...normalizeField(f),
+          going_today_count: countByField[f.id] || 0,
+        })))
       }
       setLoading(false)
     }
@@ -121,12 +129,13 @@ export default function DiscoverPage() {
                     {field.distance_km != null && ` · ${field.distance_km} km`}
                   </p>
 
-                  {/* Status + hours */}
+                  {/* Status + hours + weather */}
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                     <StatusBadge status={field.weather_status} />
                     {field.today_hours && (
                       <span className="text-xs text-gray-500">🕐 {field.today_hours} today</span>
                     )}
+                    <WeatherChip field={field} />
                   </div>
 
                   {/* Star rating — hidden until reviews are live (Phase 2) */}
@@ -145,6 +154,13 @@ export default function DiscoverPage() {
                   <div className="mt-1">
                     <ActivePlayers field={field} size="sm" />
                   </div>
+
+                  {/* Going today count */}
+                  {field.going_today_count > 0 && (
+                    <p className="text-xs text-brand font-medium mt-1">
+                      🙋 {field.going_today_count} going today
+                    </p>
+                  )}
                 </div>
               </button>
             ))}

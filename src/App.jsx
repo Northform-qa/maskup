@@ -11,6 +11,9 @@ import AdminDashboard from './pages/AdminDashboard'
 import OwnerDashboard from './pages/OwnerDashboard'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import PrivacyPage from './pages/PrivacyPage'
+import TermsPage from './pages/TermsPage'
+import CookiesPage from './pages/CookiesPage'
 
 export default function App() {
   return (
@@ -27,6 +30,11 @@ export default function App() {
 
           {/* Owner registration — public, creates a new owner account */}
           <Route path="/register" element={<OwnerRegistration />} />
+
+          {/* Legal */}
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/cookies" element={<CookiesPage />} />
 
           {/* Owner only */}
           <Route

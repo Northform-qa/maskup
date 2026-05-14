@@ -5,6 +5,7 @@ import StatusBadge from '../components/StatusBadge'
 import FieldTypeChip from '../components/FieldTypeChip'
 import ActivePlayers from '../components/ActivePlayers'
 import HeroPhoto from '../components/HeroPhoto'
+import WeatherChip from '../components/WeatherChip'
 import { supabase } from '../lib/supabase'
 import { normalizeField } from '../lib/fieldUtils'
 import { FILTER_CHIPS } from '../data/mockData'
@@ -26,16 +27,23 @@ export default function DirectoryPage() {
 
   useEffect(() => {
     async function fetchFields() {
-      const { data, error } = await supabase
-        .from('fields')
-        .select('*, events(*)')
-        .eq('listing_status', 'published')
-        .order('name')
+      const today = new Date().toISOString().split('T')[0]
+      const [{ data, error }, { data: goingRows }] = await Promise.all([
+        supabase.from('fields').select('*, events(*)').eq('listing_status', 'published').order('name'),
+        supabase.from('going_today').select('field_id').eq('date', today),
+      ])
 
       if (error) {
         setError(error.message)
       } else {
-        const normalized = (data ?? []).map(normalizeField)
+        const countByField = {}
+        goingRows?.forEach((r) => {
+          countByField[r.field_id] = (countByField[r.field_id] || 0) + 1
+        })
+        const normalized = (data ?? []).map((f) => ({
+          ...normalizeField(f),
+          going_today_count: countByField[f.id] || 0,
+        }))
         setFields(normalized)
         if (normalized.length > 0) setSelectedId(normalized[0].id)
       }
@@ -135,12 +143,13 @@ export default function DirectoryPage() {
                         {field.distance_km != null && ` · ${field.distance_km} km`}
                       </p>
 
-                      {/* Status */}
+                      {/* Status + weather */}
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <StatusBadge status={field.weather_status} />
                         {field.today_hours && (
                           <span className="text-xs text-gray-400">🕐 {field.today_hours}</span>
                         )}
+                        <WeatherChip field={field} />
                       </div>
 
                       {/* Field type chips */}
@@ -154,6 +163,13 @@ export default function DirectoryPage() {
                       <div className="mt-1">
                         <ActivePlayers field={field} size="sm" />
                       </div>
+
+                      {/* Going today count */}
+                      {field.going_today_count > 0 && (
+                        <p className="text-xs text-brand font-medium mt-1">
+                          🙋 {field.going_today_count} going today
+                        </p>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -209,6 +225,7 @@ export default function DirectoryPage() {
                     Walk-ins OK
                   </span>
                 )}
+                <WeatherChip field={selectedField} />
               </div>
 
               {/* Stat grid — Fields / Pricing / Rentals only (no capacity) */}
@@ -229,6 +246,11 @@ export default function DirectoryPage() {
               {/* Active players */}
               <div className="mb-4">
                 <ActivePlayers field={selectedField} size="sm" />
+                {selectedField.going_today_count > 0 && (
+                  <p className="text-xs text-brand font-medium mt-1">
+                    🙋 {selectedField.going_today_count} going today
+                  </p>
+                )}
               </div>
 
               {/* Game types */}

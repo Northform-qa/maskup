@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import StatusBadge from '../components/StatusBadge'
 import FieldTypeChip from '../components/FieldTypeChip'
@@ -6,6 +6,8 @@ import HeroPhoto from '../components/HeroPhoto'
 import ActivePlayers from '../components/ActivePlayers'
 import { supabase } from '../lib/supabase'
 import { normalizeField } from '../lib/fieldUtils'
+import { useAuth } from '../context/AuthContext'
+import WeatherChip from '../components/WeatherChip'
 
 const EVENT_TYPE_LABELS = {
   big_game: 'Big Game',
@@ -24,14 +26,23 @@ const EVENT_TYPE_COLORS = {
 const DAYS_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const TODAY_DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()]
 
+const TODAY = new Date().toISOString().split('T')[0]
+
 export default function FieldDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const { user } = useAuth()
   const [photoIndex] = useState(0)
   const [field, setField] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const totalPhotos = 24
+
+  const [goingCount, setGoingCount] = useState(0)
+  const [userRsvp, setUserRsvp] = useState(null)
+  const [userRsvpLoaded, setUserRsvpLoaded] = useState(false)
+  const [rsvpBusy, setRsvpBusy] = useState(false)
 
   useEffect(() => {
     async function fetchField() {
@@ -50,6 +61,65 @@ export default function FieldDetailPage() {
     }
     fetchField()
   }, [id])
+
+  useEffect(() => {
+    async function fetchGoingCount() {
+      const { count } = await supabase
+        .from('going_today')
+        .select('*', { count: 'exact', head: true })
+        .eq('field_id', id)
+        .eq('date', TODAY)
+      setGoingCount(count ?? 0)
+    }
+    fetchGoingCount()
+  }, [id])
+
+  useEffect(() => {
+    if (!user) return
+    async function fetchUserRsvp() {
+      const { data } = await supabase
+        .from('going_today')
+        .select('field_id, fields(name)')
+        .eq('user_id', user.id)
+        .eq('date', TODAY)
+        .maybeSingle()
+      setUserRsvp(data)
+      setUserRsvpLoaded(true)
+    }
+    fetchUserRsvp()
+  }, [user])
+
+  async function handleRsvp() {
+    if (!user || rsvpBusy) return
+    setRsvpBusy(true)
+    setGoingCount((c) => c + 1)
+    setUserRsvp({ field_id: id, fields: { name: field.name } })
+    const { error } = await supabase
+      .from('going_today')
+      .insert({ field_id: id, user_id: user.id, date: TODAY })
+    if (error) {
+      setGoingCount((c) => c - 1)
+      setUserRsvp(null)
+    }
+    setRsvpBusy(false)
+  }
+
+  async function handleUndo() {
+    if (!user || rsvpBusy) return
+    setRsvpBusy(true)
+    setGoingCount((c) => Math.max(0, c - 1))
+    setUserRsvp(null)
+    const { error } = await supabase
+      .from('going_today')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('date', TODAY)
+    if (error) {
+      setGoingCount((c) => c + 1)
+      setUserRsvp({ field_id: id, fields: { name: field?.name } })
+    }
+    setRsvpBusy(false)
+  }
 
   if (loading) {
     return (
@@ -152,6 +222,11 @@ export default function FieldDetailPage() {
           ))}
         </div>
 
+        {/* ── 4b. Weather ── */}
+        <div className="mb-5">
+          <WeatherChip field={field} className="text-sm px-3 py-1.5" />
+        </div>
+
         {/* ── 5. Active players — own section ── */}
         <div className="bg-gray-50 rounded-xl p-4 mb-5">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Players on-site now</p>
@@ -160,6 +235,57 @@ export default function FieldDetailPage() {
           <button className="mt-2 text-xs text-brand font-medium hover:underline">
             Are you here? Submit a report
           </button>
+        </div>
+
+        {/* ── 5b. I'm Going Today RSVP ── */}
+        <div className="bg-brand/5 border border-brand/20 rounded-xl p-4 mb-5">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Going today</p>
+
+          {goingCount > 0 && (
+            <p className="text-sm font-medium text-gray-700 mb-3">
+              {goingCount} {goingCount === 1 ? 'person' : 'people'} going today
+            </p>
+          )}
+
+          {!user && (
+            <Link
+              to="/login"
+              state={{ from: location.pathname }}
+              className="text-sm text-brand font-semibold hover:underline"
+            >
+              {goingCount > 0 ? 'Sign in to join them' : 'Sign in to say you\'re going today'}
+            </Link>
+          )}
+
+          {user && userRsvpLoaded && !userRsvp && (
+            <button
+              onClick={handleRsvp}
+              disabled={rsvpBusy}
+              className="w-full py-2.5 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-60"
+            >
+              I'm going today
+            </button>
+          )}
+
+          {user && userRsvpLoaded && userRsvp?.field_id === id && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-brand">You're going ✓</span>
+              <button
+                onClick={handleUndo}
+                disabled={rsvpBusy}
+                className="text-xs text-gray-400 hover:text-gray-600 underline disabled:opacity-40"
+              >
+                Undo
+              </button>
+            </div>
+          )}
+
+          {user && userRsvpLoaded && userRsvp && userRsvp.field_id !== id && (
+            <p className="text-sm text-gray-500">
+              You've already said you're going to{' '}
+              <span className="font-medium text-gray-700">{userRsvp.fields?.name}</span> today
+            </p>
+          )}
         </div>
 
         {/* ── 6. Game types ── */}
