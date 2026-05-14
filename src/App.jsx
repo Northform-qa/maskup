@@ -22,8 +22,7 @@ export default function App() {
         <NavBar />
         <Routes>
           {/* Public */}
-          <Route path="/" element={<DiscoverPage />} />
-          <Route path="/directory" element={<DirectoryPage />} />
+          <Route path="/" element={<><DiscoverPage /><DirectoryPage /></>} />
           <Route path="/field/:id" element={<FieldDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />

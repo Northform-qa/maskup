@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const NAV_LINKS = [
-  { to: '/directory', label: 'Discover' },
+  { to: '/', label: 'Discover' },
   { to: '/events', label: 'Events' },
   { to: '/owners', label: 'Owners' },
   { to: '/about', label: 'About' },
