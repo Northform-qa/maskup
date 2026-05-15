@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const passwordReset = location.state?.passwordReset ?? false
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -54,6 +55,12 @@ export default function LoginPage() {
           <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
         </div>
 
+        {passwordReset && (
+          <p className="text-sm text-brand bg-brand/10 border border-brand/20 rounded-lg px-3 py-2 mb-4 text-center">
+            Password updated — sign in with your new password.
+          </p>
+        )}
+
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -69,7 +76,12 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <Link to="/forgot-password" className="text-xs text-brand hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 type="password"
                 value={password}
