@@ -36,13 +36,15 @@ const mockRawField = {
 }
 
 function buildChain(resolvedValue) {
-  return {
-    select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue(resolvedValue),
-      }),
-    }),
-  }
+  const chain = {}
+  chain.select = vi.fn().mockReturnValue(chain)
+  chain.eq = vi.fn().mockReturnValue(chain)
+  chain.single = vi.fn().mockResolvedValue(resolvedValue)
+  chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null })
+  // Makes `await chain` work for queries that don't use a terminator method (e.g. count queries)
+  chain.then = (resolve, reject) =>
+    Promise.resolve({ data: null, error: null, count: 0 }).then(resolve, reject)
+  return chain
 }
 
 function renderWithRoute(id = 'field-1') {

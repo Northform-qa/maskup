@@ -1,0 +1,17 @@
+{
+  "name": "MaskUp.gg",
+  "short_name": "MaskUp",
+  "description": "Ontario paintball field directory — find fields near you.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F2EB",
+  "theme_color": "#3B6D11",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
