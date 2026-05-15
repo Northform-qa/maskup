@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-const AuthContext = createContext(null)
+const AuthContext = createContext({ user: null, profile: null, loading: false, signOut: async () => {} })
 
 async function fetchProfile(userId) {
   const { data } = await supabase

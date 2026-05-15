@@ -14,6 +14,7 @@ import SignupPage from './pages/SignupPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
 import CookiesPage from './pages/CookiesPage'
+import AboutPage from './pages/AboutPage'
 
 export default function App() {
   return (
@@ -29,6 +30,9 @@ export default function App() {
 
           {/* Owner registration — public, creates a new owner account */}
           <Route path="/register" element={<OwnerRegistration />} />
+
+          {/* About */}
+          <Route path="/about" element={<AboutPage />} />
 
           {/* Legal */}
           <Route path="/privacy" element={<PrivacyPage />} />
