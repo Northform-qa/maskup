@@ -82,15 +82,14 @@ export default function DiscoverPage() {
   // Build autocomplete suggestions (debounced 300 ms)
   useEffect(() => {
     clearTimeout(debounceRef.current)
-
-    if (query.trim().length < 2) {
-      setSuggestions([])
-      setShowDropdown(false)
-      return
-    }
+    const q = query.trim()
 
     debounceRef.current = setTimeout(async () => {
-      const q = query.trim()
+      if (q.length < 2) {
+        setSuggestions([])
+        setShowDropdown(false)
+        return
+      }
       const suggs = []
 
       // 1. Field name matches
@@ -146,7 +145,7 @@ export default function DiscoverPage() {
 
       setSuggestions(suggs.slice(0, 6))
       setShowDropdown(suggs.length > 0)
-    }, 300)
+    }, q.length < 2 ? 0 : 300)
 
     return () => clearTimeout(debounceRef.current)
   }, [query])
