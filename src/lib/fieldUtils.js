@@ -41,6 +41,7 @@ export function normalizeEvent(e) {
 export function normalizeField(f) {
   return {
     ...f,
+    field_types: [...new Set(f.field_types ?? [])],
     today_hours: getTodayHours(f.hours),
     events: (f.events ?? [])
       .map(normalizeEvent)

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import GoogleMap from '../components/GoogleMap'
+import MapboxMap from '../components/MapboxMap'
 import StatusBadge from '../components/StatusBadge'
 import FieldTypeChip from '../components/FieldTypeChip'
 import ActivePlayers from '../components/ActivePlayers'
@@ -179,7 +179,7 @@ export default function DirectoryPage() {
         </div>
 
         {/* ── Centre: Map ── */}
-        <GoogleMap
+        <MapboxMap
           fields={fields}
           selectedId={selectedId}
           onSelectPin={setSelectedId}
