@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import MapPlaceholder from '../components/MapPlaceholder'
+import GoogleMap from '../components/GoogleMap'
 import StatusBadge from '../components/StatusBadge'
 import StarRating from '../components/StarRating'
 import ActivePlayers from '../components/ActivePlayers'
@@ -42,6 +42,11 @@ export default function DiscoverPage() {
     }
     fetchFields()
   }, [])
+
+  useEffect(() => {
+    if (!selectedId) return
+    document.getElementById(`field-card-${selectedId}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [selectedId])
 
   const filtered =
     activeFilter === 'All'
@@ -87,7 +92,8 @@ export default function DiscoverPage() {
       </div>
 
       {/* Map */}
-      <MapPlaceholder
+      <GoogleMap
+        fields={fields}
         selectedId={selectedId}
         onSelectPin={setSelectedId}
         className="flex-shrink-0 h-[42vh]"
@@ -111,6 +117,7 @@ export default function DiscoverPage() {
             {filtered.map((field) => (
               <button
                 key={field.id}
+                id={`field-card-${field.id}`}
                 onClick={() => navigate(`/field/${field.id}`)}
                 className="w-full text-left flex gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
               >
