@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Loader } from '@googlemaps/js-api-loader'
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 
 const ONTARIO_CENTER = { lat: 44.0, lng: -79.5 }
 const DEFAULT_ZOOM = 7
@@ -7,10 +7,8 @@ const FIELD_ZOOM = 13
 const PIN_GREEN = '#3B6D11'
 const PIN_RED = '#E53E3E'
 
-const loader = new Loader({
-  apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-  version: 'weekly',
-})
+// Must be called before the first importLibrary()
+setOptions({ key: import.meta.env.VITE_GOOGLE_MAPS_API_KEY, v: 'weekly' })
 
 function pinIcon(google, color) {
   return {
@@ -39,10 +37,10 @@ export default function GoogleMap({ fields = [], selectedId, onSelectPin, classN
     if (!containerRef.current || mapRef.current) return
     let active = true
 
-    loader.load().then((google) => {
+    importLibrary('maps').then(({ Map }) => {
       if (!active || mapRef.current) return
-      googleRef.current = google
-      mapRef.current = new google.maps.Map(containerRef.current, {
+      googleRef.current = window.google
+      mapRef.current = new Map(containerRef.current, {
         center: ONTARIO_CENTER,
         zoom: DEFAULT_ZOOM,
         disableDefaultUI: true,
