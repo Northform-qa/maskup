@@ -92,6 +92,14 @@ create table if not exists public.crowd_reports (
 create index if not exists crowd_reports_field_time_idx
   on public.crowd_reports (field_id, submitted_at desc);
 
+-- Favourites
+create table if not exists public.favourites (
+  user_id  uuid not null references public.users(id) on delete cascade,
+  field_id uuid not null references public.fields(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, field_id)
+);
+
 -- ─────────────────────────────────────────────
 -- RLS policies
 -- ─────────────────────────────────────────────
@@ -132,6 +140,20 @@ create policy "Anyone can submit crowd reports"
 
 -- crowd_reports are write-only from the client — never readable by other users
 -- (the aggregated result is read from the fields table instead)
+
+alter table public.favourites enable row level security;
+
+create policy "Users can read their own favourites"
+  on public.favourites for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert their own favourites"
+  on public.favourites for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can delete their own favourites"
+  on public.favourites for delete
+  using (auth.uid() = user_id);
 
 -- ─────────────────────────────────────────────
 -- pg_cron jobs are in supabase/cron.sql

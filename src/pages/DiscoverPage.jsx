@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { useFavourites } from '../lib/useFavourites'
 import MapboxMap from '../components/MapboxMap'
 import StatusBadge from '../components/StatusBadge'
 import StarRating from '../components/StarRating'
@@ -31,6 +33,9 @@ function distanceSq(field, { lat, lng }) {
 }
 
 export default function DiscoverPage() {
+  const { user } = useAuth()
+  const { favourites, toggleFavourite } = useFavourites(user)
+
   const [activeFilter, setActiveFilter] = useState('All')
   const [selectedId, setSelectedId] = useState(null)
   const [fields, setFields] = useState([])
@@ -325,7 +330,14 @@ export default function DiscoverPage() {
                   {/* Name + fav */}
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="text-sm font-semibold text-gray-900 leading-tight">{field.name}</h3>
-                    <span role="button" tabIndex={0} onClick={(e) => e.stopPropagation()} className="text-gray-300 flex-shrink-0 mt-0.5">♡</span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => toggleFavourite(e, field.id)}
+                      className={`flex-shrink-0 mt-0.5 text-sm transition-colors ${favourites.has(field.id) ? 'text-red-400' : 'text-gray-300 hover:text-red-300'}`}
+                    >
+                      {favourites.has(field.id) ? '♥' : '♡'}
+                    </span>
                   </div>
 
                   {/* City + distance */}

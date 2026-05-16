@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { useFavourites } from '../lib/useFavourites'
 import MapboxMap from '../components/MapboxMap'
 import StatusBadge from '../components/StatusBadge'
 import FieldTypeChip from '../components/FieldTypeChip'
@@ -17,6 +19,9 @@ const EXTRA_FILTERS = [
 ]
 
 export default function DirectoryPage() {
+  const { user } = useAuth()
+  const { favourites, toggleFavourite } = useFavourites(user)
+
   const [activeFilter, setActiveFilter] = useState('All')
   const [fields, setFields] = useState([])
   const [selectedId, setSelectedId] = useState(null)
@@ -117,23 +122,25 @@ export default function DirectoryPage() {
                 <button
                   key={field.id}
                   onClick={() => setSelectedId(field.id)}
-                  className={`w-full text-left px-3 py-3 transition-colors ${
-                    active ? 'bg-green-50 border-l-2 border-brand' : 'hover:bg-gray-50'
+                  className={`w-full text-left pl-0 pr-3 py-3 transition-colors border-l-4 ${
+                    active
+                      ? 'bg-green-100 border-brand'
+                      : 'hover:bg-gray-50 border-transparent'
                   }`}
                 >
-                  <div className="flex gap-2.5">
+                  <div className="flex gap-2.5 pl-3">
                     <HeroPhoto className="w-12 h-12 flex-shrink-0 rounded text-[7px]" label="" />
                     <div className="flex-1 min-w-0">
                       {/* Name + fav */}
                       <div className="flex items-start justify-between gap-1">
-                        <h3 className="text-sm font-semibold text-gray-900 leading-tight">{field.name}</h3>
+                        <h3 className={`text-sm font-semibold leading-tight ${active ? 'text-brand' : 'text-gray-900'}`}>{field.name}</h3>
                         <span
                           role="button"
                           tabIndex={0}
-                          onClick={(e) => e.stopPropagation()}
-                          className={`ml-1 flex-shrink-0 text-sm ${active ? 'text-red-400' : 'text-gray-300'}`}
+                          onClick={(e) => toggleFavourite(e, field.id)}
+                          className={`ml-1 flex-shrink-0 text-sm transition-colors ${favourites.has(field.id) ? 'text-red-400' : 'text-gray-300 hover:text-red-300'}`}
                         >
-                          {active ? '♥' : '♡'}
+                          {favourites.has(field.id) ? '♥' : '♡'}
                         </span>
                       </div>
 
