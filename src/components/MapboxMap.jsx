@@ -56,7 +56,7 @@ export default function MapboxMap({ fields = [], selectedId, onSelectPin, flyTar
         mapStyle="mapbox://styles/mapbox/outdoors-v12"
         maxBounds={MAX_BOUNDS}
         dragRotate={false}
-        onLoad={() => mapRef.current?.touchZoomRotate.disableRotation()}
+        onLoad={() => mapRef.current?.getMap().touchZoomRotate?.disableRotation()}
       >
         <NavigationControl showCompass={false} position="top-right" />
 
