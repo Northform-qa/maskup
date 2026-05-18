@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 const REJECTION_REASONS = [
   'Incomplete information',
@@ -185,6 +186,7 @@ function FieldCard({ field, onApprove, onReject, saving }) {
 }
 
 export default function AdminDashboard() {
+  const { user } = useAuth()
   const [pendingFields, setPendingFields] = useState([])
   const [totalListed, setTotalListed] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -192,32 +194,38 @@ export default function AdminDashboard() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
+    if (!user) return
     async function load() {
-      const [
-        { data: pending, error: pendingErr },
-        { count: published },
-      ] = await Promise.all([
-        supabase
-          .from('fields')
-          .select('*')
-          .eq('listing_status', 'pending')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('fields')
-          .select('*', { count: 'exact', head: true })
-          .eq('listing_status', 'published'),
-      ])
+      try {
+        const [
+          { data: pending, error: pendingErr },
+          { count: published },
+        ] = await Promise.all([
+          supabase
+            .from('fields')
+            .select('*')
+            .eq('listing_status', 'pending')
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('fields')
+            .select('*', { count: 'exact', head: true })
+            .eq('listing_status', 'published'),
+        ])
 
-      if (pendingErr) {
-        setError(pendingErr.message)
-      } else {
-        setPendingFields(pending ?? [])
-        setTotalListed(published ?? 0)
+        if (pendingErr) {
+          setError(pendingErr.message)
+        } else {
+          setPendingFields(pending ?? [])
+          setTotalListed(published ?? 0)
+        }
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     load()
-  }, [])
+  }, [user])
 
   async function handleApprove(id) {
     setSaving(true)
