@@ -113,6 +113,21 @@ create policy "Published fields are public"
   on public.fields for select
   using (listing_status = 'published');
 
+create policy "Admins can read all fields"
+  on public.fields for select
+  using (
+    exists (select 1 from public.users where id = auth.uid() and role = 'admin')
+  );
+
+create policy "Admins can update fields"
+  on public.fields for update
+  using (
+    exists (select 1 from public.users where id = auth.uid() and role = 'admin')
+  )
+  with check (
+    exists (select 1 from public.users where id = auth.uid() and role = 'admin')
+  );
+
 create policy "Events on published fields are public"
   on public.events for select
   using (

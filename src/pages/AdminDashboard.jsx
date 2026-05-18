@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { PENDING_FIELDS } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 
 const REJECTION_REASONS = [
   'Incomplete information',
@@ -7,6 +7,25 @@ const REJECTION_REASONS = [
   'Duplicate listing',
   'Not a paintball field',
 ]
+
+function timeAgo(iso) {
+  if (!iso) return '—'
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+
+function computeVerifications(field) {
+  return {
+    address_geocoded: field.lat != null && field.lng != null,
+    website_responds: !!field.website,
+    photos_uploaded: false,
+    hours_provided: Object.keys(field.hours ?? {}).length > 0,
+  }
+}
 
 function VerificationRow({ label, passed }) {
   return (
@@ -23,34 +42,33 @@ function VerificationRow({ label, passed }) {
   )
 }
 
-function FieldCard({ field, onApprove, onReject }) {
+function FieldCard({ field, onApprove, onReject, saving }) {
   const [showReject, setShowReject] = useState(false)
   const [selectedReason, setSelectedReason] = useState(null)
   const [customNote, setCustomNote] = useState('')
 
+  const v = computeVerifications(field)
+
   const handleReject = () => {
-    if (!showReject) {
-      setShowReject(true)
-      return
-    }
+    if (!showReject) { setShowReject(true); return }
     if (selectedReason) onReject(field.id, selectedReason, customNote)
   }
 
   const tags = [
     field.city && `${field.city}, ${field.province}`,
-    field.email,
     field.phone,
-    ...field.field_types,
+    ...( field.field_types ?? []),
     field.num_fields && `${field.num_fields} fields`,
     field.rentals_available && 'Rentals available',
-    field.max_capacity && `Max ${field.max_capacity} players`,
+    field.typical_capacity && `Up to ${field.typical_capacity} players`,
   ].filter(Boolean)
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      {/* Tags + timestamp */}
+      {/* Header: name + tags + timestamp */}
       <div className="px-5 pt-4 pb-3 border-b border-gray-100">
-        <div className="flex items-start justify-between gap-2 mb-2">
+        <h2 className="text-base font-bold text-gray-900 mb-2">{field.name}</h2>
+        <div className="flex items-start justify-between gap-2">
           <div className="flex flex-wrap gap-1.5">
             {tags.map((tag) => (
               <span key={tag} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
@@ -59,7 +77,7 @@ function FieldCard({ field, onApprove, onReject }) {
             ))}
           </div>
           <span className="text-xs text-gray-400 flex-shrink-0 flex items-center gap-1">
-            🕐 {field.created_at}
+            🕐 {timeAgo(field.created_at)}
           </span>
         </div>
       </div>
@@ -69,20 +87,24 @@ function FieldCard({ field, onApprove, onReject }) {
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Quick Verification</p>
         <div className="space-y-2">
           <VerificationRow
-            label={`Address geocoded successfully — ${field.city}, ${field.province}`}
-            passed={field.verifications.address_geocoded}
+            label={v.address_geocoded
+              ? `Address geocoded — ${field.city}, ${field.province}`
+              : 'Address not geocoded — lat/lng missing'}
+            passed={v.address_geocoded}
           />
           <VerificationRow
-            label={`Website link responds${field.website ? ` (${field.website})` : ''}`}
-            passed={field.verifications.website_responds}
+            label={v.website_responds
+              ? `Website provided (${field.website})`
+              : 'No website provided'}
+            passed={v.website_responds}
           />
           <VerificationRow
             label="No photos uploaded yet — listing will show placeholder"
-            passed={field.verifications.photos_uploaded}
+            passed={v.photos_uploaded}
           />
           <VerificationRow
-            label="Hours and seasonal dates provided"
-            passed={field.verifications.hours_provided}
+            label={v.hours_provided ? 'Hours provided' : 'No hours provided'}
+            passed={v.hours_provided}
           />
         </div>
       </div>
@@ -110,7 +132,7 @@ function FieldCard({ field, onApprove, onReject }) {
             type="text"
             value={customNote}
             onChange={(e) => setCustomNote(e.target.value)}
-            placeholder="Please add your full street address and at least one contact phone number before resubmitting."
+            placeholder="Optional: add a note for the owner"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 text-gray-600"
           />
         </div>
@@ -122,13 +144,15 @@ function FieldCard({ field, onApprove, onReject }) {
           <>
             <button
               onClick={() => onApprove(field.id)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-dark transition-colors"
+              disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50"
             >
               ✓ Approve &amp; publish
             </button>
             <button
               onClick={handleReject}
-              className="px-4 py-2.5 border border-gray-300 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={saving}
+              className="px-4 py-2.5 border border-gray-300 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Reject
             </button>
@@ -137,15 +161,16 @@ function FieldCard({ field, onApprove, onReject }) {
           <>
             <button
               onClick={() => onApprove(field.id)}
-              className="px-4 py-2.5 border border-gray-300 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={saving}
+              className="px-4 py-2.5 border border-gray-300 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Approve &amp; publish
             </button>
             <button
               onClick={handleReject}
-              disabled={!selectedReason}
+              disabled={!selectedReason || saving}
               className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
-                selectedReason
+                selectedReason && !saving
                   ? 'bg-red-600 text-white hover:bg-red-700'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
@@ -154,25 +179,75 @@ function FieldCard({ field, onApprove, onReject }) {
             </button>
           </>
         )}
-        <button className="ml-auto flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700">
-          <span className="text-sm">⊕</span> Preview listing
-        </button>
       </div>
     </div>
   )
 }
 
 export default function AdminDashboard() {
-  const [fields, setFields] = useState(PENDING_FIELDS)
-  const [approvedCount] = useState(5)
-  const [totalListed] = useState(18)
+  const [pendingFields, setPendingFields] = useState([])
+  const [totalListed, setTotalListed] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
 
-  const handleApprove = (id) => {
-    setFields((prev) => prev.filter((f) => f.id !== id))
+  useEffect(() => {
+    async function load() {
+      const [
+        { data: pending, error: pendingErr },
+        { count: published },
+      ] = await Promise.all([
+        supabase
+          .from('fields')
+          .select('*')
+          .eq('listing_status', 'pending')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('fields')
+          .select('*', { count: 'exact', head: true })
+          .eq('listing_status', 'published'),
+      ])
+
+      if (pendingErr) {
+        setError(pendingErr.message)
+      } else {
+        setPendingFields(pending ?? [])
+        setTotalListed(published ?? 0)
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  async function handleApprove(id) {
+    setSaving(true)
+    const { error } = await supabase
+      .from('fields')
+      .update({ listing_status: 'published' })
+      .eq('id', id)
+
+    if (error) {
+      setError(error.message)
+    } else {
+      setPendingFields((prev) => prev.filter((f) => f.id !== id))
+      setTotalListed((prev) => prev + 1)
+    }
+    setSaving(false)
   }
 
-  const handleReject = (id, _reason, _note) => {
-    setFields((prev) => prev.filter((f) => f.id !== id))
+  async function handleReject(id, _reason, _note) {
+    setSaving(true)
+    const { error } = await supabase
+      .from('fields')
+      .update({ listing_status: 'rejected' })
+      .eq('id', id)
+
+    if (error) {
+      setError(error.message)
+    } else {
+      setPendingFields((prev) => prev.filter((f) => f.id !== id))
+    }
+    setSaving(false)
   }
 
   return (
@@ -189,29 +264,36 @@ export default function AdminDashboard() {
             </div>
             <h1 className="text-xl font-bold text-gray-900">Review new listings before they go live</h1>
             <span className="ml-auto px-2.5 py-0.5 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">
-              {fields.length} pending
+              {pendingFields.length} pending
             </span>
           </div>
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 mb-1">Total listed</p>
+            <p className="text-xs text-gray-500 mb-1">Total published</p>
             <p className="text-2xl font-bold text-gray-900">{totalListed}</p>
           </div>
           <div className="bg-orange-50 rounded-xl border border-orange-200 p-4">
-            <p className="text-xs text-orange-600 mb-1">Pending</p>
-            <p className="text-2xl font-bold text-orange-700">{fields.length}</p>
-          </div>
-          <div className="bg-green-50 rounded-xl border border-green-200 p-4">
-            <p className="text-xs text-green-600 mb-1">Approved this month</p>
-            <p className="text-2xl font-bold text-brand">{approvedCount}</p>
+            <p className="text-xs text-orange-600 mb-1">Pending review</p>
+            <p className="text-2xl font-bold text-orange-700">{pendingFields.length}</p>
           </div>
         </div>
 
+        {/* Error banner */}
+        {error && (
+          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Field cards */}
-        {fields.length === 0 ? (
+        {loading ? (
+          <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-400 text-sm">
+            Loading…
+          </div>
+        ) : pendingFields.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
             <span className="text-4xl mb-3 block">✓</span>
             <h3 className="text-lg font-semibold text-gray-800">All caught up!</h3>
@@ -219,12 +301,13 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <div className="space-y-4">
-            {fields.map((field) => (
+            {pendingFields.map((field) => (
               <FieldCard
                 key={field.id}
                 field={field}
                 onApprove={handleApprove}
                 onReject={handleReject}
+                saving={saving}
               />
             ))}
           </div>
