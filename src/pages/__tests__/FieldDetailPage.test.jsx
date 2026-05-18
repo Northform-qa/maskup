@@ -40,7 +40,7 @@ function buildChain(resolvedValue) {
   chain.select = vi.fn().mockReturnValue(chain)
   chain.eq = vi.fn().mockReturnValue(chain)
   chain.single = vi.fn().mockResolvedValue(resolvedValue)
-  chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null })
+  chain.maybeSingle = vi.fn().mockResolvedValue(resolvedValue)
   // Makes `await chain` work for queries that don't use a terminator method (e.g. count queries)
   chain.then = (resolve, reject) =>
     Promise.resolve({ data: null, error: null, count: 0 }).then(resolve, reject)
