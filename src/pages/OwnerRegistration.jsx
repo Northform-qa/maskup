@@ -117,6 +117,19 @@ function Step2({ data, onChange }) {
         />
       </div>
 
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Street address <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={data.address}
+          onChange={(e) => onChange('address', e.target.value)}
+          placeholder="123 Field Road"
+          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+        />
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -146,19 +159,32 @@ function Step2({ data, onChange }) {
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Street address <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={data.address}
-          onChange={(e) => onChange('address', e.target.value)}
-          placeholder="123 Field Road..."
-          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
-        />
-        <p className="text-xs text-gray-400 mt-1">Used to calculate distance from player's location</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Postal code <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={data.postal_code}
+            onChange={(e) => onChange('postal_code', e.target.value.toUpperCase())}
+            placeholder="N4S 1A1"
+            maxLength={7}
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+          <input
+            type="text"
+            value="Canada"
+            readOnly
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500 cursor-default"
+          />
+        </div>
       </div>
+
+      <p className="text-xs text-gray-400 -mt-2">Full address is used to pin your field on the map</p>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -386,7 +412,7 @@ function Step4({ data, onChange }) {
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Ready to submit?</h3>
         {[
           { label: 'Field name', value: data.name || '—' },
-          { label: 'Location', value: data.city ? `${data.city}, ${data.province}` : '—' },
+          { label: 'Location', value: data.city ? `${data.address ? data.address + ', ' : ''}${data.city}, ${data.province} ${data.postal_code}`.trim() : '—' },
           { label: 'Field types', value: data.field_types?.join(', ') || '—' },
           { label: 'Phone / Website', value: [data.phone, data.website].filter(Boolean).join(' · ') || '—' },
         ].map((row) => (
@@ -398,6 +424,17 @@ function Step4({ data, onChange }) {
       </div>
     </div>
   )
+}
+
+async function geocodeAddress(address, city, province, postalCode) {
+  const token = import.meta.env.VITE_MAPBOX_TOKEN
+  const query = encodeURIComponent(`${address}, ${city}, ${province}, ${postalCode}, Canada`)
+  const res = await fetch(
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?country=CA&types=address,poi&limit=1&access_token=${token}`
+  )
+  const json = await res.json()
+  const [lng, lat] = json.features?.[0]?.center ?? [null, null]
+  return { lat, lng }
 }
 
 export default function OwnerRegistration() {
@@ -414,6 +451,7 @@ export default function OwnerRegistration() {
     city: 'Woodstock',
     province: 'ON',
     address: '',
+    postal_code: '',
     field_types: ['Woodball', 'Scenario'],
     num_fields: '5',
     typical_capacity: '',
@@ -469,12 +507,18 @@ export default function OwnerRegistration() {
       return
     }
 
+    const { lat, lng } = formData.address.trim()
+      ? await geocodeAddress(formData.address.trim(), formData.city.trim(), formData.province, formData.postal_code.trim())
+      : { lat: null, lng: null }
+
     const { error: fieldError } = await supabase.from('fields').insert({
       owner_id: authData.user.id,
       name: formData.name.trim(),
       city: formData.city.trim(),
       province: formData.province,
       address: formData.address.trim() || null,
+      lat,
+      lng,
       field_types: formData.field_types,
       num_fields: formData.num_fields ? parseInt(formData.num_fields, 10) : null,
       typical_capacity: formData.typical_capacity ? parseInt(formData.typical_capacity, 10) : null,
@@ -500,6 +544,29 @@ export default function OwnerRegistration() {
   }
 
   const handleNext = () => {
+    setError(null)
+    if (step === 0) {
+      if (!formData.email.trim() || !formData.password.trim()) {
+        setError('Email and password are required.')
+        return
+      }
+      if (formData.password.length < 8) {
+        setError('Password must be at least 8 characters.')
+        return
+      }
+    }
+    if (step === 1) {
+      const missing = []
+      if (!formData.name.trim()) missing.push('field name')
+      if (!formData.address.trim()) missing.push('street address')
+      if (!formData.city.trim()) missing.push('city')
+      if (!formData.postal_code.trim()) missing.push('postal code')
+      if (formData.field_types.length === 0) missing.push('at least one field type')
+      if (missing.length > 0) {
+        setError(`Please fill in: ${missing.join(', ')}.`)
+        return
+      }
+    }
     if (step < STEPS.length - 1) {
       setStep((s) => s + 1)
     } else {

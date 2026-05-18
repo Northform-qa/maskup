@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useFavourites } from '../lib/useFavourites'
@@ -12,11 +12,30 @@ import { supabase } from '../lib/supabase'
 import { normalizeField } from '../lib/fieldUtils'
 import { FILTER_CHIPS } from '../data/mockData'
 
+const POSTAL_RE = /^[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d$/
 const EXTRA_FILTERS = [
   { label: '🎿 Rentals', value: 'rentals' },
   { label: '● Open today', value: 'open' },
   { label: '📅 Events this weekend', value: 'events' },
 ]
+
+async function geocodePostal(code) {
+  const token = import.meta.env.VITE_MAPBOX_TOKEN
+  const res = await fetch(
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(code)}.json?country=CA&types=postcode&access_token=${token}`
+  )
+  const json = await res.json()
+  const feature = json.features?.[0]
+  if (!feature) return null
+  const [lng, lat] = feature.center
+  return { lng, lat }
+}
+
+function distanceSq(field, { lat, lng }) {
+  const dlat = Number(field.lat) - lat
+  const dlng = Number(field.lng) - lng
+  return dlat * dlat + dlng * dlng
+}
 
 export default function DirectoryPage() {
   const { user } = useAuth()
@@ -28,6 +47,15 @@ export default function DirectoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sort] = useState('Distance')
+
+  const [query, setQuery] = useState('')
+  const [suggestions, setSuggestions] = useState([])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [searchActive, setSearchActive] = useState(false)
+  const [searchFields, setSearchFields] = useState([])
+  const [flyTarget, setFlyTarget] = useState(null)
+  const debounceRef = useRef(null)
+
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -57,24 +85,154 @@ export default function DirectoryPage() {
     fetchFields()
   }, [])
 
+  // Debounced autocomplete
+  useEffect(() => {
+    clearTimeout(debounceRef.current)
+    const q = query.trim()
+    debounceRef.current = setTimeout(async () => {
+      if (q.length < 2) { setSuggestions([]); setShowDropdown(false); return }
+      const suggs = []
+
+      const { data: nameMatches } = await supabase
+        .from('fields').select('id, name, city, province, lat, lng')
+        .ilike('name', `%${q}%`).eq('listing_status', 'published').limit(4)
+      nameMatches?.forEach((f) => suggs.push({ type: 'field', id: f.id, label: `${f.name} — ${f.city}`, field: f }))
+
+      if (suggs.length < 5) {
+        const { data: cityMatches } = await supabase
+          .from('fields').select('id, city, province, lat, lng')
+          .ilike('city', `%${q}%`).eq('listing_status', 'published').limit(20)
+        const cities = {}
+        cityMatches?.forEach((f) => {
+          const key = `${f.city}|${f.province}`
+          if (!cities[key]) cities[key] = { city: f.city, province: f.province }
+        })
+        Object.values(cities).forEach((c) => {
+          if (suggs.length < 5) suggs.push({ type: 'city', id: `city-${c.city}-${c.province}`, label: `${c.city}, ${c.province}`, city: c.city, province: c.province })
+        })
+      }
+
+      if (POSTAL_RE.test(q) && suggs.length < 6)
+        suggs.push({ type: 'postal', id: `postal-${q}`, label: `Search near ${q.toUpperCase()}`, code: q })
+
+      setSuggestions(suggs.slice(0, 6))
+      setShowDropdown(suggs.length > 0)
+    }, q.length < 2 ? 0 : 300)
+    return () => clearTimeout(debounceRef.current)
+  }, [query])
+
+  async function handleSelectSuggestion(sugg) {
+    setShowDropdown(false)
+    setSearchActive(true)
+    if (sugg.type === 'field') {
+      setQuery(sugg.label)
+      const match = fields.find((f) => f.id === sugg.id)
+      setSearchFields(match ? [match] : [])
+      setSelectedId(sugg.id)
+    } else if (sugg.type === 'city') {
+      setQuery(sugg.label)
+      const cityFields = fields.filter((f) => f.city.toLowerCase() === sugg.city.toLowerCase())
+      setSearchFields(cityFields)
+      const withCoords = cityFields.filter((f) => f.lat != null && f.lng != null)
+      if (withCoords.length > 0) {
+        const avgLat = withCoords.reduce((s, f) => s + Number(f.lat), 0) / withCoords.length
+        const avgLng = withCoords.reduce((s, f) => s + Number(f.lng), 0) / withCoords.length
+        setFlyTarget({ center: [avgLng, avgLat], zoom: 10 })
+      }
+    } else if (sugg.type === 'postal') {
+      setQuery(sugg.code.toUpperCase())
+      const geo = await geocodePostal(sugg.code)
+      if (geo) {
+        const sorted = fields.filter((f) => f.lat != null && f.lng != null).sort((a, b) => distanceSq(a, geo) - distanceSq(b, geo))
+        setSearchFields(sorted)
+        setFlyTarget({ center: [geo.lng, geo.lat], zoom: 10 })
+      }
+    }
+  }
+
+  function handleClear() {
+    setQuery('')
+    setSuggestions([])
+    setShowDropdown(false)
+    setSearchActive(false)
+    setSearchFields([])
+    setSelectedId(fields[0]?.id ?? null)
+    setFlyTarget({ center: [-79.5, 44.0], zoom: 7 })
+  }
+
   const filtered =
     activeFilter === 'All'
       ? fields
       : fields.filter((f) => f.field_types.includes(activeFilter))
 
-  const selectedField = filtered.find((f) => f.id === selectedId) ?? filtered[0]
+  const displayed = searchActive ? searchFields : filtered
+  const selectedField = displayed.find((f) => f.id === selectedId) ?? displayed[0]
 
   return (
     <div className="hidden md:flex flex-col h-screen bg-cream-100">
       {/* Filter bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-2 flex items-center gap-2 flex-wrap">
+      <div className="bg-white border-b border-gray-200 px-6 py-2 flex items-center gap-3 flex-wrap">
+
+        {/* Search */}
+        <div className="relative">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-1.5 w-56">
+            <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+              placeholder="Search fields or cities…"
+              className="flex-1 bg-transparent text-xs text-gray-700 placeholder-gray-400 focus:outline-none"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            {query && (
+              <button onClick={handleClear} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {showDropdown && suggestions.length > 0 && (
+            <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
+              {suggestions.map((sugg) => (
+                <button
+                  key={sugg.id}
+                  onMouseDown={() => handleSelectSuggestion(sugg)}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0"
+                >
+                  {sugg.type === 'field' && (
+                    <svg className="w-3.5 h-3.5 text-brand flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  {sugg.type !== 'field' && (
+                    <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    </svg>
+                  )}
+                  <span className="truncate text-xs">{sugg.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="w-px h-5 bg-gray-200" />
+
+        {/* Field type chips */}
         <div className="flex items-center gap-1.5">
           {FILTER_CHIPS.map((chip) => (
             <button
               key={chip}
-              onClick={() => setActiveFilter(chip)}
+              onClick={() => { setActiveFilter(chip); setSearchActive(false) }}
               className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                activeFilter === chip
+                activeFilter === chip && !searchActive
                   ? 'bg-gray-900 text-white border-gray-900'
                   : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
               }`}
@@ -83,7 +241,7 @@ export default function DirectoryPage() {
             </button>
           ))}
         </div>
-        <div className="w-px h-5 bg-gray-200 mx-1" />
+        <div className="w-px h-5 bg-gray-200" />
         {EXTRA_FILTERS.map((f) => (
           <button
             key={f.value}
@@ -93,7 +251,7 @@ export default function DirectoryPage() {
           </button>
         ))}
         <div className="ml-auto flex items-center gap-3 text-sm text-gray-500">
-          <span>{filtered.length} fields</span>
+          <span>{displayed.length} fields</span>
           <button className="flex items-center gap-1 text-gray-600 font-medium">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
@@ -112,11 +270,13 @@ export default function DirectoryPage() {
             <div className="py-16 text-center text-gray-400 text-sm">Loading fields…</div>
           ) : error ? (
             <div className="py-16 text-center text-red-400 text-sm px-4">{error}</div>
-          ) : filtered.length === 0 ? (
-            <div className="py-16 text-center text-gray-400 text-sm">No fields match this filter.</div>
+          ) : displayed.length === 0 ? (
+            <div className="py-16 text-center text-gray-400 text-sm">
+              {searchActive ? 'No fields found.' : 'No fields match this filter.'}
+            </div>
           ) : null}
           <div className="divide-y divide-gray-100">
-            {filtered.map((field) => {
+            {displayed.map((field) => {
               const active = field.id === selectedId
               return (
                 <button
@@ -190,6 +350,7 @@ export default function DirectoryPage() {
           fields={fields}
           selectedId={selectedId}
           onSelectPin={setSelectedId}
+          flyTarget={flyTarget}
           className="flex-1"
         />
 

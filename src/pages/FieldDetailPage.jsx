@@ -5,7 +5,7 @@ import FieldTypeChip from '../components/FieldTypeChip'
 import HeroPhoto from '../components/HeroPhoto'
 import ActivePlayers from '../components/ActivePlayers'
 import { supabase } from '../lib/supabase'
-import { normalizeField } from '../lib/fieldUtils'
+import { normalizeField, formatTime } from '../lib/fieldUtils'
 import { useAuth } from '../context/AuthContext'
 import WeatherChip from '../components/WeatherChip'
 
@@ -50,10 +50,12 @@ export default function FieldDetailPage() {
         .from('fields')
         .select('*, events(*)')
         .eq('id', id)
-        .single()
+        .maybeSingle()
 
       if (error) {
         setError(error.message)
+      } else if (!data) {
+        setError('Field not found or not yet published.')
       } else {
         setField(normalizeField(data))
       }
@@ -345,7 +347,16 @@ export default function FieldDetailPage() {
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Hours</h2>
           <div className="divide-y divide-gray-100">
             {DAYS_ORDER.map((day) => {
-              const hours = field.hours?.[day] ?? 'Closed'
+              const raw = field.hours?.[day]
+              let hoursLabel = 'Closed'
+              if (raw) {
+                if (typeof raw === 'string') {
+                  hoursLabel = raw !== 'Closed' ? raw : 'Closed'
+                } else if (!raw.closed && raw.open && raw.close) {
+                  hoursLabel = `${formatTime(raw.open)}–${formatTime(raw.close)}`
+                }
+              }
+              const isClosed = hoursLabel === 'Closed'
               const isToday = day === TODAY_DAY
               return (
                 <div
@@ -356,8 +367,8 @@ export default function FieldDetailPage() {
                     {day}
                     {isToday && <span className="ml-2 text-[10px] bg-brand text-white px-1.5 py-0.5 rounded-full font-medium">Today</span>}
                   </span>
-                  <span className={`text-sm ${hours === 'Closed' ? 'text-gray-400' : isToday ? 'text-brand font-semibold' : 'text-gray-700'}`}>
-                    {hours}
+                  <span className={`text-sm ${isClosed ? 'text-gray-400' : isToday ? 'text-brand font-semibold' : 'text-gray-700'}`}>
+                    {hoursLabel}
                   </span>
                 </div>
               )

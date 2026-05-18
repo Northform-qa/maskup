@@ -9,6 +9,7 @@ import FieldDetailPage from './pages/FieldDetailPage'
 import OwnerRegistration from './pages/OwnerRegistration'
 import AdminDashboard from './pages/AdminDashboard'
 import OwnerDashboard from './pages/OwnerDashboard'
+import EditListingPage from './pages/EditListingPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
@@ -49,6 +50,14 @@ export default function App() {
             element={
               <ProtectedRoute requiredRole="owner">
                 <OwnerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/owner-dashboard/edit"
+            element={
+              <ProtectedRoute requiredRole="owner">
+                <EditListingPage />
               </ProtectedRoute>
             }
           />
