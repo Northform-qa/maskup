@@ -211,6 +211,10 @@ export default function DiscoverPage() {
     <div className="md:hidden flex flex-col h-screen bg-white">
       {/* Search bar */}
       <div className="px-4 pt-12 pb-3 bg-white">
+        {/* Wordmark */}
+        <p className="text-base tracking-tight leading-none mb-3">
+          <span className="font-bold text-brand">Mask</span><span className="font-normal text-gray-800">Up</span><span className="font-normal text-gray-400 text-sm">.gg</span>
+        </p>
         <div className="relative">
           <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2.5">
             <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
