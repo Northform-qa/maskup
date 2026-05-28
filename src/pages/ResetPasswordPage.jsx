@@ -7,6 +7,7 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate()
 
   const [ready, setReady] = useState(false)
+  const [linkExpired, setLinkExpired] = useState(false)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState(null)
@@ -21,7 +22,13 @@ export default function ResetPasswordPage() {
       if (session) setReady(true)
     })
 
-    return () => subscription.unsubscribe()
+    // If ready hasn't fired after 6 seconds the token is expired or already used
+    const timeout = setTimeout(() => setLinkExpired(true), 6000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   async function handleSubmit(e) {
@@ -69,16 +76,22 @@ export default function ResetPasswordPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           {!ready ? (
-            <div className="text-center space-y-3 py-2">
-              <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-sm text-gray-500">Verifying your reset link…</p>
-              <p className="text-xs text-gray-400 pt-1">
-                Link expired or already used?{' '}
-                <Link to="/forgot-password" className="text-brand font-medium hover:underline">
-                  Request a new one
-                </Link>
-              </p>
-            </div>
+            linkExpired ? (
+              <div className="text-center space-y-3 py-2">
+                <p className="text-sm text-gray-700 font-medium">This link has expired or already been used.</p>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  Password reset links are single-use.{' '}
+                  <Link to="/forgot-password" className="text-brand font-medium hover:underline">
+                    Request a new one
+                  </Link>
+                </p>
+              </div>
+            ) : (
+              <div className="text-center space-y-3 py-2">
+                <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-sm text-gray-500">Verifying your reset link…</p>
+              </div>
+            )
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
