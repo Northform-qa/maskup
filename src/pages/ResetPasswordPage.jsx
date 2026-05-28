@@ -43,18 +43,19 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password })
-
-    if (error) {
-      setError(error.message)
+    try {
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) {
+        setError(error.message)
+        return
+      }
+      setDone(true)
+      setTimeout(() => navigate('/login', { state: { passwordReset: true } }), 2000)
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    setDone(true)
-    setLoading(false)
-
-    setTimeout(() => navigate('/login', { state: { passwordReset: true } }), 2000)
   }
 
   return (
