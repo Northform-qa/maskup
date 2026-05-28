@@ -210,7 +210,7 @@ export default function DiscoverPage() {
   return (
     <div className="md:hidden flex flex-col h-screen bg-white">
       {/* Search bar */}
-      <div className="px-4 pt-12 pb-3 bg-white">
+      <div className="px-4 pt-4 pb-3 bg-white">
         {/* Wordmark */}
         <p className="text-base tracking-tight leading-none mb-3">
           <span className="font-bold text-brand">Mask</span><span className="font-normal text-gray-800">Up</span><span className="font-normal text-gray-400 text-sm">.gg</span>
