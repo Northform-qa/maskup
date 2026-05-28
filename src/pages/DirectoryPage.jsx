@@ -212,7 +212,7 @@ export default function DirectoryPage() {
   const selectedField = displayed.find((f) => f.id === selectedId) ?? displayed[0]
 
   return (
-    <div className="hidden md:flex flex-col h-screen bg-cream-100">
+    <div className="hidden md:flex flex-col h-full bg-cream-100">
       {/* Filter bar */}
       <div className="bg-white border-b border-gray-200 px-6 py-2 flex items-center gap-3 flex-wrap">
 
@@ -368,7 +368,7 @@ export default function DirectoryPage() {
                         {field.today_hours && (
                           <span className="text-xs text-gray-400">🕐 {field.today_hours}</span>
                         )}
-                        <WeatherChip field={field} />
+                        <WeatherChip field={field} className="ml-auto" />
                       </div>
 
                       {/* Field type chips */}
@@ -408,104 +408,115 @@ export default function DirectoryPage() {
 
         {/* ── Right: preview panel ── */}
         {selectedField && (
-          <div className="w-72 flex-shrink-0 overflow-y-auto bg-white border-l border-gray-200 flex flex-col">
-            <HeroPhoto className="h-40 w-full text-xs flex-shrink-0" label="HERO PHOTO" />
+          <div className="w-72 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col">
 
-            <div className="p-4 flex-1 flex flex-col">
-              {/* Location */}
-              <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                </svg>
-                {selectedField.city}, {selectedField.province}
-                {selectedField.distance_km != null && ` · ${selectedField.distance_km} km`}
-              </div>
+            {/* Scrollable content */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <HeroPhoto className="h-40 w-full text-xs flex-shrink-0" label="HERO PHOTO" />
 
-              {/* Star rating — hidden until Phase 2 reviews */}
-              {selectedField.rating != null && (
-                <div className="flex items-center gap-1 mb-3">
-                  {'★★★★★'.split('').map((_, i) => (
-                    <span key={i} className={`text-sm ${i < Math.floor(selectedField.rating) ? 'text-yellow-400' : 'text-gray-200'}`}>★</span>
+              <div className="p-4">
+                {/* Location */}
+                <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                  {selectedField.city}, {selectedField.province}
+                  {selectedField.distance_km != null && ` · ${selectedField.distance_km} km`}
+                </div>
+
+                {/* Star rating — hidden until Phase 2 reviews */}
+                {selectedField.rating != null && (
+                  <div className="flex items-center gap-1 mb-3">
+                    {'★★★★★'.split('').map((_, i) => (
+                      <span key={i} className={`text-sm ${i < Math.floor(selectedField.rating) ? 'text-yellow-400' : 'text-gray-200'}`}>★</span>
+                    ))}
+                    {selectedField.review_count != null && (
+                      <span className="text-xs text-gray-500 ml-0.5">({selectedField.review_count})</span>
+                    )}
+                  </div>
+                )}
+
+                {/* Status badges */}
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  <StatusBadge status={selectedField.weather_status} />
+                  {selectedField.today_hours && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+                      🕐 {selectedField.today_hours} today
+                    </span>
+                  )}
+                  {selectedField.walk_ins && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+                      Walk-ins OK
+                    </span>
+                  )}
+                  <WeatherChip field={selectedField} className="ml-auto" />
+                </div>
+
+                {/* Stat grid — Fields / Pricing / Rentals only (no capacity) */}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {[
+                    { icon: '⚡', label: 'FIELDS', value: selectedField.num_fields },
+                    { icon: '💰', label: 'PRICING', value: selectedField.pricing?.split(' ')[0] ?? '—' },
+                    { icon: '🎿', label: 'RENTALS', value: selectedField.rentals_available ? 'Yes' : 'No' },
+                  ].map((stat) => (
+                    <div key={stat.label} className="border border-gray-200 rounded-lg p-2 flex flex-col items-center gap-0.5 text-center">
+                      <span className="text-base">{stat.icon}</span>
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wide font-medium">{stat.label}</span>
+                      <span className="text-sm font-semibold text-gray-800 leading-tight">{stat.value}</span>
+                    </div>
                   ))}
-                  {selectedField.review_count != null && (
-                    <span className="text-xs text-gray-500 ml-0.5">({selectedField.review_count})</span>
+                </div>
+
+                {/* Active players */}
+                <div className="mb-4">
+                  <ActivePlayers field={selectedField} size="sm" />
+                  {selectedField.going_today_count > 0 && (
+                    <p className="text-xs text-brand font-medium mt-1">
+                      🙋 {selectedField.going_today_count} going today
+                    </p>
                   )}
                 </div>
-              )}
 
-              {/* Status badges */}
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                <StatusBadge status={selectedField.weather_status} />
-                {selectedField.today_hours && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
-                    🕐 {selectedField.today_hours} today
-                  </span>
-                )}
-                {selectedField.walk_ins && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
-                    Walk-ins OK
-                  </span>
-                )}
-                <WeatherChip field={selectedField} />
-              </div>
-
-              {/* Stat grid — Fields / Pricing / Rentals only (no capacity) */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {[
-                  { icon: '⚡', label: 'FIELDS', value: selectedField.num_fields },
-                  { icon: '💰', label: 'PRICING', value: selectedField.pricing?.split(' ')[0] ?? '—' },
-                  { icon: '🎿', label: 'RENTALS', value: selectedField.rentals_available ? 'Yes' : 'No' },
-                ].map((stat) => (
-                  <div key={stat.label} className="border border-gray-200 rounded-lg p-2 flex flex-col items-center gap-0.5 text-center">
-                    <span className="text-base">{stat.icon}</span>
-                    <span className="text-[9px] text-gray-400 uppercase tracking-wide font-medium">{stat.label}</span>
-                    <span className="text-sm font-semibold text-gray-800 leading-tight">{stat.value}</span>
+                {/* Game types */}
+                <div className="mb-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1.5">Game Types</p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedField.field_types.map((t) => (
+                      <FieldTypeChip key={t} type={t} small />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
 
-              {/* Active players */}
-              <div className="mb-4">
-                <ActivePlayers field={selectedField} size="sm" />
-                {selectedField.going_today_count > 0 && (
-                  <p className="text-xs text-brand font-medium mt-1">
-                    🙋 {selectedField.going_today_count} going today
-                  </p>
+                {/* Upcoming event */}
+                {selectedField.events[0] && (
+                  <div className="bg-orange-50 rounded-lg p-3 mb-4 flex items-center gap-2">
+                    <span className="text-orange-500 text-sm flex-shrink-0">📅</span>
+                    <span className="text-xs font-medium text-orange-800 leading-tight">
+                      {selectedField.events[0].title} — {selectedField.events[0].display_date}
+                    </span>
+                  </div>
                 )}
               </div>
+            </div>
 
-              {/* Game types */}
-              <div className="mb-4">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1.5">Game Types</p>
-                <div className="flex flex-wrap gap-1">
-                  {selectedField.field_types.map((t) => (
-                    <FieldTypeChip key={t} type={t} small />
-                  ))}
-                </div>
-              </div>
-
-              {/* Upcoming event */}
-              {selectedField.events[0] && (
-                <div className="bg-orange-50 rounded-lg p-3 mb-4 flex items-center gap-2">
-                  <span className="text-orange-500 text-sm flex-shrink-0">📅</span>
-                  <span className="text-xs font-medium text-orange-800 leading-tight">
-                    {selectedField.events[0].title} — {selectedField.events[0].display_date}
-                  </span>
-                </div>
-              )}
-
-              {/* CTAs */}
-              <div className="mt-auto space-y-2">
-                <button
-                  onClick={() => navigate(`/field/${selectedField.id}`)}
-                  className="w-full bg-brand text-white font-semibold py-2.5 rounded-lg text-sm hover:bg-brand-dark transition-colors"
+            {/* Pinned CTAs — always visible at panel bottom */}
+            <div className="flex-shrink-0 border-t border-gray-100 p-4 space-y-2 bg-white">
+              <button
+                onClick={() => navigate(`/field/${selectedField.id}`)}
+                className="w-full bg-brand text-white font-semibold py-2.5 rounded-lg text-sm hover:bg-brand-dark transition-colors"
+              >
+                View full field page →
+              </button>
+              {selectedField.lat && selectedField.lng && (
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${selectedField.lat},${selectedField.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
                 >
-                  View full field page →
-                </button>
-                <button className="w-full text-center text-xs text-gray-500 py-1 hover:text-gray-700 flex items-center justify-center gap-1">
-                  <span>⊕</span> Get directions
-                </button>
-              </div>
+                  🗺️ Get Directions
+                </a>
+              )}
             </div>
           </div>
         )}

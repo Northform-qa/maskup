@@ -352,7 +352,7 @@ export default function DiscoverPage() {
                     {field.today_hours && (
                       <span className="text-xs text-gray-500">🕐 {field.today_hours} today</span>
                     )}
-                    <WeatherChip field={field} />
+                    <WeatherChip field={field} className="ml-auto" />
                   </div>
 
                   {/* Star rating — hidden until reviews are live (Phase 2) */}

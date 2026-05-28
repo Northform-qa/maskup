@@ -174,11 +174,23 @@ export default function FieldDetailPage() {
       <div className="px-4 pt-4">
 
         {/* ── 3. Field header ── */}
-        <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-          <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-          </svg>
-          {field.city}, {field.province}{field.distance_km != null && ` · ${field.distance_km} km away`}
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+            </svg>
+            {field.city}, {field.province}{field.distance_km != null && ` · ${field.distance_km} km away`}
+          </div>
+          {field.lat && field.lng && (
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${field.lat},${field.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-brand font-medium hover:underline flex-shrink-0"
+            >
+              🗺️ Get Directions
+            </a>
+          )}
         </div>
 
         <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{field.name}</h1>
@@ -226,7 +238,7 @@ export default function FieldDetailPage() {
 
         {/* ── 4b. Weather ── */}
         <div className="mb-5">
-          <WeatherChip field={field} className="text-sm px-3 py-1.5" />
+          <WeatherChip field={field} variant="detail" />
         </div>
 
         {/* ── 5. Active players — own section ── */}
@@ -398,9 +410,20 @@ export default function FieldDetailPage() {
 
       {/* ── 11. Sticky footer ── */}
       <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 flex items-center gap-3 px-4 py-3 z-50">
-        <button className="flex-1 py-3 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
-          <span>⊕</span> Directions
-        </button>
+        {field.lat && field.lng ? (
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${field.lat},${field.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 py-3 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+          >
+            🗺️ Directions
+          </a>
+        ) : (
+          <button disabled className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-gray-300 flex items-center justify-center gap-2 cursor-not-allowed">
+            🗺️ Directions
+          </button>
+        )}
         <button className="flex-1 py-3 bg-brand rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 hover:bg-brand-dark transition-colors">
           <span>📞</span> Call to book
         </button>

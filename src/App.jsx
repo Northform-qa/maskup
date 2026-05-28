@@ -23,7 +23,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <div className="h-screen overflow-hidden flex flex-col">
         <NavBar />
+        <div className="flex-1 min-h-0 overflow-y-auto">
         <Routes>
           {/* Public */}
           <Route path="/" element={<><DiscoverPage /><DirectoryPage /></>} />
@@ -72,7 +74,9 @@ export default function App() {
             }
           />
         </Routes>
+        </div>
         <MobileNav />
+        </div>
       </AuthProvider>
     </BrowserRouter>
   )
