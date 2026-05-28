@@ -11,17 +11,12 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [done, setDone] = useState(false)
 
-  // Supabase embeds the recovery token in the URL hash and fires
-  // PASSWORD_RECOVERY once it has established the session.
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setReady(true)
     })
 
-    // If the user already has a recovery session (e.g. hard refresh),
-    // getSession resolves synchronously before the event fires.
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setReady(true)
     })
@@ -49,8 +44,8 @@ export default function ResetPasswordPage() {
         setError(error.message)
         return
       }
-      setDone(true)
-      setTimeout(() => navigate('/login', { state: { passwordReset: true } }), 2000)
+      await supabase.auth.signOut()
+      navigate('/login', { state: { passwordReset: true } })
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -73,16 +68,7 @@ export default function ResetPasswordPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          {done ? (
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-brand/10 flex items-center justify-center mx-auto">
-                <svg className="w-6 h-6 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <p className="text-sm text-gray-700 font-medium">Password updated! Redirecting you to sign in…</p>
-            </div>
-          ) : !ready ? (
+          {!ready ? (
             <div className="text-center space-y-3 py-2">
               <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="text-sm text-gray-500">Verifying your reset link…</p>

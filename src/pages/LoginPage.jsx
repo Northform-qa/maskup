@@ -57,7 +57,7 @@ export default function LoginPage() {
 
         {passwordReset && (
           <p className="text-sm text-brand bg-brand/10 border border-brand/20 rounded-lg px-3 py-2 mb-4 text-center">
-            Password updated — sign in with your new password.
+            Your password has been changed — please sign in again.
           </p>
         )}
 
