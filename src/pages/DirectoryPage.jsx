@@ -27,7 +27,7 @@ function isOpenNow(field) {
     return nowMins >= oh * 60 + om && nowMins < ch * 60 + cm
   }
   if (typeof val === 'string' && val !== 'Closed') {
-    const match = val.match(/(\d+)(?::(\d+))?(am|pm)[–\-](\d+)(?::(\d+))?(am|pm)/i)
+    const match = val.match(/(\d+)(?::(\d+))?(am|pm)[–-](\d+)(?::(\d+))?(am|pm)/i)
     if (!match) return false
     let [, oh, om = '0', op, ch, cm = '0', cp] = match
     oh = parseInt(oh); om = parseInt(om); ch = parseInt(ch); cm = parseInt(cm)
