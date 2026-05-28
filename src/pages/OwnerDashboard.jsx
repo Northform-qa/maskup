@@ -103,7 +103,7 @@ function initials(name) {
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
 }
 
-function ListingStatusBanner({ status }) {
+function ListingStatusBanner({ status, rejectionReason, fieldName }) {
   if (status === 'published') return null
 
   if (status === 'pending') {
@@ -135,14 +135,26 @@ function ListingStatusBanner({ status }) {
   }
 
   if (status === 'rejected') {
+    const subject = encodeURIComponent(`Listing Rejection - ${fieldName ?? 'My Field'}`)
     return (
-      <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
-        <span className="text-red-400 flex-shrink-0 mt-0.5">✕</span>
-        <div>
-          <p className="text-sm font-semibold text-red-700">Listing not approved</p>
-          <p className="text-xs text-red-600 mt-0.5 leading-relaxed">
-            Your listing wasn't approved. Check your email for details, update your information, and resubmit or contact support.
-          </p>
+      <div className="mb-5 bg-red-50 border border-red-200 rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <span className="text-red-400 flex-shrink-0 mt-0.5">✕</span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-red-700">Your listing was not approved</p>
+            {rejectionReason && (
+              <p className="text-xs text-red-600 mt-1 leading-relaxed">{rejectionReason}</p>
+            )}
+            <p className="text-xs text-red-500 mt-2 leading-relaxed">
+              Have questions about your rejection?{' '}
+              <a
+                href={`mailto:support@maskup.gg?subject=${subject}`}
+                className="underline font-medium hover:text-red-700"
+              >
+                Email us at support@maskup.gg
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -322,7 +334,7 @@ export default function OwnerDashboard() {
       {/* Main content */}
       <div className="px-4 py-5 md:max-w-6xl md:mx-auto md:px-6 md:py-8">
 
-        <ListingStatusBanner status={field.listing_status} />
+        <ListingStatusBanner status={field.listing_status} rejectionReason={field.rejection_reason} fieldName={field.name} />
 
         {/* Stat cards */}
         <div className="flex gap-2 md:gap-4 mb-4 md:mb-6">

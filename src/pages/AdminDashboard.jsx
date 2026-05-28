@@ -73,15 +73,29 @@ function PendingCard({ field, onApprove, onReject, saving }) {
 
   const v = computeVerifications(field)
 
-  const handleReject = () => {
+  function handleRejectClick() {
     if (!showReject) { setShowReject(true); return }
     if (selectedReason) onReject(field.id, selectedReason, customNote)
   }
 
+  function handleCancel() {
+    setShowReject(false)
+    setSelectedReason(null)
+    setCustomNote('')
+  }
+
+  const owner = field.users
+  const ownerLabel = owner
+    ? [owner.display_name, owner.email].filter(Boolean).join(' — ')
+    : null
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
       <div className="px-5 pt-4 pb-3 border-b border-gray-100">
-        <h2 className="text-base font-bold text-gray-900 mb-2">{field.name}</h2>
+        <h2 className="text-base font-bold text-gray-900 mb-1">{field.name}</h2>
+        {ownerLabel && (
+          <p className="text-xs text-gray-400 mb-2">Submitted by {ownerLabel}</p>
+        )}
         <div className="flex items-start justify-between gap-2">
           <FieldTags field={field} />
           <span className="text-xs text-gray-400 flex-shrink-0 flex items-center gap-1">
@@ -142,7 +156,7 @@ function PendingCard({ field, onApprove, onReject, saving }) {
         </div>
       )}
 
-      <div className="px-5 pb-4 flex items-center gap-3">
+      <div className="px-5 pb-4 flex items-center gap-3 flex-wrap">
         {!showReject ? (
           <>
             <button
@@ -153,9 +167,9 @@ function PendingCard({ field, onApprove, onReject, saving }) {
               ✓ Approve &amp; publish
             </button>
             <button
-              onClick={handleReject}
+              onClick={handleRejectClick}
               disabled={saving}
-              className="px-4 py-2.5 border border-gray-300 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="px-4 py-2.5 border border-red-300 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
             >
               Reject
             </button>
@@ -163,14 +177,7 @@ function PendingCard({ field, onApprove, onReject, saving }) {
         ) : (
           <>
             <button
-              onClick={() => onApprove(field.id)}
-              disabled={saving}
-              className="px-4 py-2.5 border border-gray-300 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              Approve &amp; publish
-            </button>
-            <button
-              onClick={handleReject}
+              onClick={handleRejectClick}
               disabled={!selectedReason || saving}
               className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
                 selectedReason && !saving
@@ -178,7 +185,13 @@ function PendingCard({ field, onApprove, onReject, saving }) {
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
             >
-              → Send rejection
+              Confirm reject
+            </button>
+            <button
+              onClick={handleCancel}
+              className="px-4 py-2.5 border border-gray-300 text-sm font-medium text-gray-500 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
             </button>
           </>
         )}
@@ -283,6 +296,12 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState(null)
+
+  function showToast(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
 
   useEffect(() => {
     async function load() {
@@ -292,7 +311,7 @@ export default function AdminDashboard() {
           { data: published, error: publishedErr },
           { data: hidden, error: hiddenErr },
         ] = await Promise.all([
-          supabase.from('fields').select('*').eq('listing_status', 'pending').order('created_at', { ascending: false }),
+          supabase.from('fields').select('*, users!owner_id(display_name, email)').eq('listing_status', 'pending').order('created_at', { ascending: false }),
           supabase.from('fields').select('*').eq('listing_status', 'published').order('name'),
           supabase.from('fields').select('*').eq('listing_status', 'hidden').order('name'),
         ])
@@ -321,15 +340,18 @@ export default function AdminDashboard() {
       const field = pendingFields.find((f) => f.id === id)
       setPendingFields((prev) => prev.filter((f) => f.id !== id))
       if (field) setPublishedFields((prev) => [...prev, { ...field, listing_status: 'published' }].sort((a, b) => a.name.localeCompare(b.name)))
+      showToast('Listing approved and now live')
     }
     setSaving(false)
   }
 
-  async function handleReject(id) {
+  async function handleReject(id, selectedReason, customNote) {
     setSaving(true)
-    const { error } = await supabase.from('fields').update({ listing_status: 'rejected' }).eq('id', id)
+    const rejection_reason = selectedReason + (customNote?.trim() ? ` — ${customNote.trim()}` : '')
+    const { error } = await supabase.from('fields').update({ listing_status: 'rejected', rejection_reason }).eq('id', id)
     if (error) { setError(error.message) } else {
       setPendingFields((prev) => prev.filter((f) => f.id !== id))
+      showToast('Listing rejected')
     }
     setSaving(false)
   }
@@ -383,6 +405,11 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-cream-100 py-8 px-4">
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-full shadow-lg whitespace-nowrap">
+          {toast}
+        </div>
+      )}
       <div className="max-w-2xl mx-auto">
 
         {/* Header */}
