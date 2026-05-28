@@ -13,11 +13,44 @@ import { normalizeField } from '../lib/fieldUtils'
 import { FILTER_CHIPS } from '../data/mockData'
 
 const POSTAL_RE = /^[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d$/
-const EXTRA_FILTERS = [
-  { label: '🎿 Rentals', value: 'rentals' },
-  { label: '● Open today', value: 'open' },
-  { label: '📅 Events this weekend', value: 'events' },
-]
+const DAY_KEYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+function isOpenNow(field) {
+  const val = field.hours?.[DAY_KEYS[new Date().getDay()]]
+  if (!val) return false
+  if (val.closed) return false
+  const now = new Date()
+  const nowMins = now.getHours() * 60 + now.getMinutes()
+  if (val.open && val.close) {
+    const [oh, om] = val.open.split(':').map(Number)
+    const [ch, cm] = val.close.split(':').map(Number)
+    return nowMins >= oh * 60 + om && nowMins < ch * 60 + cm
+  }
+  if (typeof val === 'string' && val !== 'Closed') {
+    const match = val.match(/(\d+)(?::(\d+))?(am|pm)[–\-](\d+)(?::(\d+))?(am|pm)/i)
+    if (!match) return false
+    let [, oh, om = '0', op, ch, cm = '0', cp] = match
+    oh = parseInt(oh); om = parseInt(om); ch = parseInt(ch); cm = parseInt(cm)
+    if (op.toLowerCase() === 'pm' && oh !== 12) oh += 12
+    if (op.toLowerCase() === 'am' && oh === 12) oh = 0
+    if (cp.toLowerCase() === 'pm' && ch !== 12) ch += 12
+    if (cp.toLowerCase() === 'am' && ch === 12) ch = 0
+    return nowMins >= oh * 60 + om && nowMins < ch * 60 + cm
+  }
+  return false
+}
+
+function getWeekendDates() {
+  const today = new Date()
+  const day = today.getDay()
+  const daysUntilSat = day === 6 ? 0 : 6 - day
+  const sat = new Date(today)
+  sat.setDate(today.getDate() + daysUntilSat)
+  const sun = new Date(sat)
+  sun.setDate(sat.getDate() + 1)
+  const fmt = (d) => d.toISOString().split('T')[0]
+  return [fmt(sat), fmt(sun)]
+}
 
 async function geocodePostal(code) {
   const token = import.meta.env.VITE_MAPBOX_TOKEN
@@ -47,6 +80,9 @@ export default function DirectoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sort] = useState('Distance')
+  const [showOpenToday, setShowOpenToday] = useState(false)
+  const [showRentals, setShowRentals] = useState(false)
+  const [showEventsWeekend, setShowEventsWeekend] = useState(false)
 
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
@@ -165,7 +201,14 @@ export default function DirectoryPage() {
       ? fields
       : fields.filter((f) => f.field_types.includes(activeFilter))
 
-  const displayed = searchActive ? searchFields : filtered
+  const weekendDates = getWeekendDates()
+  const baseList = searchActive ? searchFields : filtered
+  const displayed = baseList.filter((f) => {
+    if (showOpenToday && !(f.weather_status === 'open' && isOpenNow(f))) return false
+    if (showRentals && !f.rentals_available) return false
+    if (showEventsWeekend && !f.events.some((e) => weekendDates.includes(e.date))) return false
+    return true
+  })
   const selectedField = displayed.find((f) => f.id === selectedId) ?? displayed[0]
 
   return (
@@ -242,12 +285,21 @@ export default function DirectoryPage() {
           ))}
         </div>
         <div className="w-px h-5 bg-gray-200" />
-        {EXTRA_FILTERS.map((f) => (
+        {[
+          { label: '● Open today', active: showOpenToday, toggle: () => setShowOpenToday((v) => !v) },
+          { label: '🎿 Rentals', active: showRentals, toggle: () => setShowRentals((v) => !v) },
+          { label: '📅 Events this weekend', active: showEventsWeekend, toggle: () => setShowEventsWeekend((v) => !v) },
+        ].map(({ label, active, toggle }) => (
           <button
-            key={f.value}
-            className="px-3 py-1 rounded-full text-xs font-medium border border-gray-300 text-gray-600 hover:border-gray-400 transition-colors"
+            key={label}
+            onClick={toggle}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              active
+                ? 'bg-brand text-white border-brand'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+            }`}
           >
-            {f.label}
+            {label}
           </button>
         ))}
         <div className="ml-auto flex items-center gap-3 text-sm text-gray-500">

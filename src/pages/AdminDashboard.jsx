@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../context/AuthContext'
 
 const REJECTION_REASONS = [
   'Incomplete information',
@@ -277,7 +276,6 @@ function ManagedCard({ field, onHide, onRestore, onToggleFeature, onDelete, savi
 
 // ── Main dashboard ─────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('Pending')
   const [pendingFields, setPendingFields] = useState([])
   const [publishedFields, setPublishedFields] = useState([])
@@ -287,7 +285,6 @@ export default function AdminDashboard() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!user) return
     async function load() {
       try {
         const [
@@ -315,7 +312,7 @@ export default function AdminDashboard() {
       }
     }
     load()
-  }, [user])
+  }, [])
 
   async function handleApprove(id) {
     setSaving(true)
