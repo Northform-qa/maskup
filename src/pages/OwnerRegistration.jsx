@@ -576,15 +576,9 @@ async function geocodeAddress(address, city, province, postalCode) {
 export default function OwnerRegistration() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [screen, setScreen] = useState('path_select')
-  const [path, setPath] = useState('new')
-
-  useEffect(() => {
-    if (new URLSearchParams(location.search).get('claim') === 'true') {
-      setPath('claim')
-      setScreen('claim_search')
-    }
-  }, [])
+  const isClaim = new URLSearchParams(location.search).get('claim') === 'true'
+  const [screen, setScreen] = useState(isClaim ? 'claim_search' : 'path_select')
+  const [path, setPath] = useState(isClaim ? 'claim' : 'new')
   const [selectedClaimField, setSelectedClaimField] = useState(null)
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
