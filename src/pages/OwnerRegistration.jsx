@@ -659,6 +659,7 @@ export default function OwnerRegistration() {
       city: formData.city.trim(),
       province: formData.province,
       address: formData.address.trim() || null,
+      postal_code: formData.postal_code.trim() || null,
       lat,
       lng,
       field_types: formData.field_types,
