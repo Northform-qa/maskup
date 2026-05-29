@@ -43,6 +43,28 @@ export default function FieldDetailPage() {
   const [userRsvp, setUserRsvp] = useState(null)
   const [userRsvpLoaded, setUserRsvpLoaded] = useState(false)
   const [rsvpBusy, setRsvpBusy] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
+  const [mentionedIt, setMentionedIt] = useState(false)
+
+  async function handleMentionIt() {
+    setMentionedIt(true)
+    await supabase.rpc('increment_player_cta_clicks', { field_id: id })
+  }
+
+  async function handleShare(fieldName) {
+    const shareData = {
+      title: fieldName,
+      text: `Check out ${fieldName} on MaskUp.gg`,
+      url: window.location.href,
+    }
+    if (navigator.share) {
+      try { await navigator.share(shareData) } catch (_) {}
+    } else {
+      await navigator.clipboard.writeText(window.location.href)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2000)
+    }
+  }
 
   useEffect(() => {
     async function fetchField() {
@@ -221,20 +243,61 @@ export default function FieldDetailPage() {
           )}
         </div>
 
-        {/* ── 4. Stat row — 3 stats, no capacity ── */}
-        <div className="grid grid-cols-3 gap-2 mb-5">
+        {/* ── Unclaimed banner ── */}
+        {!field.claimed && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+            <p className="text-sm text-amber-800 leading-relaxed mb-3">
+              This listing hasn't been claimed yet. Know someone who runs{' '}
+              <span className="font-semibold">{field.name}</span>? Share MaskUp.gg with them.
+            </p>
+            <button
+              onClick={() => handleShare(field.name)}
+              className="w-full py-2.5 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 transition-colors"
+            >
+              {shareCopied ? 'Link copied!' : 'Share this listing'}
+            </button>
+          </div>
+        )}
+
+        {/* ── "I Mentioned It" CTA ── */}
+        {!field.claimed && (
+          <div className="mb-5">
+            <p className="text-xs text-gray-500 mb-2">Already mentioned MaskUp.gg at this field? Let us know!</p>
+            <button
+              onClick={handleMentionIt}
+              disabled={mentionedIt}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                mentionedIt
+                  ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-default'
+                  : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-50'
+              }`}
+            >
+              {mentionedIt ? 'Thanks for spreading the word! 🎯' : 'I mentioned it ✓'}
+            </button>
+          </div>
+        )}
+
+        {/* ── 4. Stat row — omit Pricing/Rentals for unclaimed when data missing ── */}
+        <div className="flex gap-2 mb-5">
           {[
             { icon: '⚡', label: 'FIELDS', value: field.num_fields },
-            { icon: '💰', label: 'PRICING', value: field.pricing?.split('–')[0]?.trim() ?? '—' },
-            { icon: '🎿', label: 'RENTALS', value: field.rentals_available ? 'Yes' : 'No' },
-          ].map((stat) => (
-            <div key={stat.label} className="border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-1">
+            { icon: '💰', label: 'PRICING', value: field.pricing?.split('–')[0]?.trim() ?? '—', skip: !field.claimed && !field.pricing },
+            { icon: '🎿', label: 'RENTALS', value: field.rentals_available ? 'Yes' : 'No', skip: !field.claimed },
+          ].filter((s) => !s.skip).map((stat) => (
+            <div key={stat.label} className="flex-1 border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-1">
               <span className="text-xl">{stat.icon}</span>
               <span className="text-[9px] text-gray-400 uppercase tracking-wide font-medium">{stat.label}</span>
               <span className="text-sm font-bold text-gray-800 text-center leading-tight">{stat.value}</span>
             </div>
           ))}
         </div>
+
+        {/* Pricing CTA — unclaimed fields with no pricing data */}
+        {!field.claimed && !field.pricing && (
+          <p className="text-sm text-amber-700 mb-5">
+            Pricing not listed yet — mention MaskUp.gg next time you're at {field.name}
+          </p>
+        )}
 
         {/* ── 4b. Weather ── */}
         <div className="mb-5">
@@ -303,14 +366,20 @@ export default function FieldDetailPage() {
         </div>
 
         {/* ── 6. Game types ── */}
-        <div className="mb-5">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Game types</h2>
-          <div className="flex flex-wrap gap-1.5">
-            {field.field_types.map((t) => (
-              <FieldTypeChip key={t} type={t} />
-            ))}
+        {(field.field_types.length > 0 || !field.claimed) && (
+          <div className="mb-5">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Game types</h2>
+            {field.field_types.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {field.field_types.map((t) => (
+                  <FieldTypeChip key={t} type={t} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-amber-700">Game types not listed yet — ask the staff at {field.name} to claim their listing</p>
+            )}
           </div>
-        </div>
+        )}
 
         {/* ── 7. Upcoming events ── */}
         {field.events.length > 0 && (
@@ -349,48 +418,62 @@ export default function FieldDetailPage() {
         )}
 
         {/* ── 8. About this field ── */}
-        <div className="mb-5">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">About this field</h2>
-          <p className="text-sm text-gray-600 leading-relaxed">{field.description}</p>
-        </div>
+        {(field.description || !field.claimed) && (
+          <div className="mb-5">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">About this field</h2>
+            {field.description ? (
+              <p className="text-sm text-gray-600 leading-relaxed">{field.description}</p>
+            ) : (
+              <p className="text-sm text-amber-700">No description yet — know this field? Tell them about MaskUp.gg</p>
+            )}
+          </div>
+        )}
 
         {/* ── 9. Hours ── */}
         <div className="mb-5">
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Hours</h2>
-          <div className="divide-y divide-gray-100">
-            {DAYS_ORDER.map((day) => {
-              const raw = field.hours?.[day]
-              let hoursLabel = 'Closed'
-              if (raw) {
-                if (typeof raw === 'string') {
-                  hoursLabel = raw !== 'Closed' ? raw : 'Closed'
-                } else if (!raw.closed && raw.open && raw.close) {
-                  hoursLabel = `${formatTime(raw.open)}–${formatTime(raw.close)}`
-                }
-              }
-              const isClosed = hoursLabel === 'Closed'
-              const isToday = day === TODAY_DAY
-              return (
-                <div
-                  key={day}
-                  className={`flex items-center justify-between py-2 ${isToday ? '-mx-1 px-1 bg-brand/5 rounded' : ''}`}
-                >
-                  <span className={`text-sm ${isToday ? 'text-brand font-semibold' : 'text-gray-600'}`}>
-                    {day}
-                    {isToday && <span className="ml-2 text-[10px] bg-brand text-white px-1.5 py-0.5 rounded-full font-medium">Today</span>}
-                  </span>
-                  <span className={`text-sm ${isClosed ? 'text-gray-400' : isToday ? 'text-brand font-semibold' : 'text-gray-700'}`}>
-                    {hoursLabel}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-          <p className="text-xs text-gray-400 mt-2.5">
-            {isIndoor || !field.seasonal_start
-              ? 'Open year-round'
-              : `Seasonal: ${new Date(field.seasonal_start).toLocaleDateString('en-CA', { month: 'long' })} – ${new Date(field.seasonal_end).toLocaleDateString('en-CA', { month: 'long' })}`}
-          </p>
+          {!field.claimed && Object.keys(field.hours ?? {}).length === 0 ? (
+            <p className="text-sm text-amber-700">
+              Hours not listed yet — next time you visit {field.name}, ask them about claiming their free MaskUp.gg listing!
+            </p>
+          ) : (
+            <>
+              <div className="divide-y divide-gray-100">
+                {DAYS_ORDER.map((day) => {
+                  const raw = field.hours?.[day]
+                  let hoursLabel = 'Closed'
+                  if (raw) {
+                    if (typeof raw === 'string') {
+                      hoursLabel = raw !== 'Closed' ? raw : 'Closed'
+                    } else if (!raw.closed && raw.open && raw.close) {
+                      hoursLabel = `${formatTime(raw.open)}–${formatTime(raw.close)}`
+                    }
+                  }
+                  const isClosed = hoursLabel === 'Closed'
+                  const isToday = day === TODAY_DAY
+                  return (
+                    <div
+                      key={day}
+                      className={`flex items-center justify-between py-2 ${isToday ? '-mx-1 px-1 bg-brand/5 rounded' : ''}`}
+                    >
+                      <span className={`text-sm ${isToday ? 'text-brand font-semibold' : 'text-gray-600'}`}>
+                        {day}
+                        {isToday && <span className="ml-2 text-[10px] bg-brand text-white px-1.5 py-0.5 rounded-full font-medium">Today</span>}
+                      </span>
+                      <span className={`text-sm ${isClosed ? 'text-gray-400' : isToday ? 'text-brand font-semibold' : 'text-gray-700'}`}>
+                        {hoursLabel}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="text-xs text-gray-400 mt-2.5">
+                {isIndoor || !field.seasonal_start
+                  ? 'Open year-round'
+                  : `Seasonal: ${new Date(field.seasonal_start).toLocaleDateString('en-CA', { month: 'long' })} – ${new Date(field.seasonal_end).toLocaleDateString('en-CA', { month: 'long' })}`}
+              </p>
+            </>
+          )}
         </div>
 
         {/* ── 10. Rental gear ── */}
@@ -401,6 +484,8 @@ export default function FieldDetailPage() {
               <span className="text-brand text-sm mt-0.5 flex-shrink-0">✓</span>
               <p className="text-sm text-gray-600">{field.rental_pricing}</p>
             </div>
+          ) : !field.claimed ? (
+            <p className="text-sm text-amber-700">Rental info not available yet — ask {field.name} about claiming their free MaskUp.gg listing</p>
           ) : (
             <p className="text-sm text-gray-400">No rentals — bring your own gear</p>
           )}

@@ -353,6 +353,9 @@ export default function DiscoverPage() {
                   {/* Status + hours + weather */}
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                     <StatusBadge status={field.weather_status} />
+                    {!field.claimed && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">Unclaimed</span>
+                    )}
                     {field.today_hours && (
                       <span className="text-xs text-gray-500">🕐 {field.today_hours} today</span>
                     )}
@@ -365,11 +368,13 @@ export default function DiscoverPage() {
                   </div>
 
                   {/* Field type chips */}
-                  <div className="flex gap-1 mt-1 flex-wrap">
-                    {field.field_types.map((t) => (
-                      <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{t}</span>
-                    ))}
-                  </div>
+                  {field.field_types.length > 0 && (
+                    <div className="flex gap-1 mt-1 flex-wrap">
+                      {field.field_types.map((t) => (
+                        <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{t}</span>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Active players — beneath field type chips */}
                   <div className="mt-1">
