@@ -120,7 +120,7 @@ export default function FieldDetailPage() {
     setUserRsvp({ field_id: id, fields: { name: field.name } })
     const { error } = await supabase
       .from('going_today')
-      .insert({ field_id: id, user_id: user.id, date: TODAY })
+      .upsert({ field_id: id, user_id: user.id, date: TODAY }, { onConflict: 'user_id,date' })
     if (error) {
       setGoingCount((c) => c - 1)
       setUserRsvp(null)
@@ -137,6 +137,7 @@ export default function FieldDetailPage() {
       .from('going_today')
       .delete()
       .eq('user_id', user.id)
+      .eq('field_id', id)
       .eq('date', TODAY)
     if (error) {
       setGoingCount((c) => c + 1)
