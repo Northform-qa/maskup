@@ -1,4 +1,4 @@
-import Filter from 'bad-words'
+import { Filter } from 'bad-words'
 
 const profanityFilter = new Filter()
 
