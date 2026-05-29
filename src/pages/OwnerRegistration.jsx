@@ -368,6 +368,8 @@ function Step2({ data, onChange }) {
             value={data.typical_capacity}
             onChange={(e) => onChange('typical_capacity', e.target.value)}
             placeholder="e.g. 40"
+            min="1"
+            max="500"
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
           />
         </div>
@@ -749,6 +751,10 @@ export default function OwnerRegistration() {
         setError(`Please fill in: ${missing.join(', ')}.`)
         return
       }
+      if (formData.typical_capacity && parseInt(formData.typical_capacity, 10) > 500) {
+        setError('Max group size cannot exceed 500.')
+        return
+      }
     }
     if (step === 2) {
       const rawPhone = formData.phone?.trim()
@@ -764,8 +770,7 @@ export default function OwnerRegistration() {
       if (rawWeb) {
         try {
           const u = new URL(rawWeb.match(/^https?:\/\//i) ? rawWeb : `https://${rawWeb}`)
-          const tld = u.hostname.split('.').pop()
-          if (!u.hostname.includes('.') || tld.length < 2) throw new Error()
+          if (!/^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(u.hostname)) throw new Error()
         } catch {
           setError('Please enter a valid website URL (e.g. yourfield.ca or https://yourfield.com)')
           return

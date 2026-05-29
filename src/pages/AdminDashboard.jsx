@@ -65,6 +65,104 @@ function FieldTags({ field }) {
   )
 }
 
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+function fmtHour(t) {
+  if (!t) return ''
+  const [h, m] = t.split(':').map(Number)
+  const period = h >= 12 ? 'pm' : 'am'
+  const hour = h % 12 || 12
+  return m === 0 ? `${hour}${period}` : `${hour}:${String(m).padStart(2, '0')}${period}`
+}
+
+function FieldInfoSection({ field }) {
+  const hasHours = Object.keys(field.hours ?? {}).length > 0
+
+  return (
+    <div className="px-5 py-4 space-y-4 border-b border-gray-100 text-sm">
+
+      {/* Location */}
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Location</p>
+        <p className="text-gray-700">
+          {[field.address, field.city, field.province, field.postal_code].filter(Boolean).join(', ')}
+        </p>
+        <p className={`text-xs mt-0.5 ${field.lat ? 'text-brand' : 'text-amber-600'}`}>
+          {field.lat ? '✓ Geocoded — will appear on map' : '○ Not geocoded — will not appear on map'}
+        </p>
+      </div>
+
+      {/* Contact */}
+      {(field.phone || field.website) && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Contact</p>
+          <div className="space-y-0.5">
+            {field.phone && <p className="text-gray-700">📞 {field.phone}</p>}
+            {field.website && (
+              <a href={field.website.startsWith('http') ? field.website : `https://${field.website}`} target="_blank" rel="noopener noreferrer" className="text-brand hover:underline block">
+                🌐 {field.website}
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Game types */}
+      {(field.field_types ?? []).length > 0 && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Game Types</p>
+          <div className="flex flex-wrap gap-1">
+            {field.field_types.map((t) => (
+              <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">{t}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Details */}
+      {(field.num_fields || field.typical_capacity || field.rentals_available || field.pricing) && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Details</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-gray-700">
+            {field.num_fields && <span>⚡ {field.num_fields} fields</span>}
+            {field.typical_capacity && <span>👥 Up to {field.typical_capacity} players</span>}
+            {field.rentals_available && <span>🎿 Rentals available</span>}
+            {field.pricing && <span>💰 {field.pricing}</span>}
+          </div>
+        </div>
+      )}
+
+      {/* Hours */}
+      {hasHours && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Hours</p>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-0.5">
+            {DAYS.map((day) => {
+              const h = field.hours?.[day]
+              const closed = !h || h.closed
+              const label = closed ? 'Closed' : `${fmtHour(h.open)}–${fmtHour(h.close)}`
+              return (
+                <div key={day} className="flex justify-between">
+                  <span className="text-xs text-gray-500">{day}</span>
+                  <span className={`text-xs ${closed ? 'text-gray-300' : 'text-gray-700 font-medium'}`}>{label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Description */}
+      {field.description && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Description</p>
+          <p className="text-gray-600 leading-relaxed">{field.description}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Pending approval card ──────────────────────────────────────────────────
 function PendingCard({ field, onApprove, onReject, saving }) {
   const [showReject, setShowReject] = useState(false)
@@ -104,17 +202,17 @@ function PendingCard({ field, onApprove, onReject, saving }) {
         </div>
       </div>
 
+      <FieldInfoSection field={field} />
+
       <div className="px-5 py-4">
-        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Quick Verification</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Checklist</p>
         <div className="space-y-2">
           <VerificationRow
-            label={v.address_geocoded
-              ? `Address geocoded — ${field.city}, ${field.province}`
-              : 'Address not geocoded — lat/lng missing'}
+            label={v.address_geocoded ? 'Address geocoded — map pin set' : 'Address not geocoded — will not appear on map'}
             passed={v.address_geocoded}
           />
           <VerificationRow
-            label={v.website_responds ? `Website provided (${field.website})` : 'No website provided'}
+            label={v.website_responds ? `Website provided` : 'No website provided'}
             passed={v.website_responds}
           />
           <VerificationRow
@@ -337,6 +435,8 @@ function ClaimCard({ field, onApprove, onReject, saving }) {
           )}
         </div>
       </div>
+
+      <FieldInfoSection field={field} />
 
       {showReject && (
         <div className="px-5 pb-4 pt-3">
