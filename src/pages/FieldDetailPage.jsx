@@ -58,7 +58,7 @@ export default function FieldDetailPage() {
       url: window.location.href,
     }
     if (navigator.share) {
-      try { await navigator.share(shareData) } catch (_) {}
+      try { await navigator.share(shareData) } catch { /* user dismissed or share failed */ }
     } else {
       await navigator.clipboard.writeText(window.location.href)
       setShareCopied(true)
