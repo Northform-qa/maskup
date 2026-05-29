@@ -1,25 +1,40 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { validateDisplayName } from '../lib/displayNameValidation'
 
 export default function SignupPage() {
   const navigate = useNavigate()
 
   const [displayName, setDisplayName] = useState('')
+  const [displayNameError, setDisplayNameError] = useState(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  function handleDisplayNameChange(e) {
+    const val = e.target.value
+    setDisplayName(val)
+    setDisplayNameError(validateDisplayName(val))
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
+    const nameErr = validateDisplayName(displayName)
+    if (nameErr) {
+      setDisplayNameError(nameErr)
+      setLoading(false)
+      return
+    }
+
     if (displayName.trim()) {
       const { data: taken } = await supabase.rpc('is_display_name_taken', { name: displayName.trim() })
       if (taken) {
-        setError('That display name is already taken.')
+        setDisplayNameError('That display name is already taken.')
         setLoading(false)
         return
       }
@@ -66,10 +81,13 @@ export default function SignupPage() {
               <input
                 type="text"
                 value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
+                onChange={handleDisplayNameChange}
                 placeholder="Your name or handle"
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+                className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand ${displayNameError ? 'border-red-400' : 'border-gray-300'}`}
               />
+              {displayNameError && (
+                <p className="text-xs text-red-500 mt-1">{displayNameError}</p>
+              )}
             </div>
 
             <div>
@@ -109,7 +127,7 @@ export default function SignupPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !!displayNameError}
               className="w-full py-2.5 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-60"
             >
               {loading ? 'Creating account…' : 'Create account'}

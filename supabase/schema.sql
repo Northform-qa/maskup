@@ -175,3 +175,41 @@ create policy "Users can delete their own favourites"
 -- Run that file separately AFTER enabling the pg_cron extension:
 --   Supabase dashboard → Database → Extensions → pg_cron → Enable
 -- ─────────────────────────────────────────────
+
+-- ─────────────────────────────────────────────
+-- Migration: owner_profiles table
+-- Run in Supabase SQL editor
+-- ─────────────────────────────────────────────
+create table public.owner_profiles (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.users(id) on delete cascade,
+  first_name text not null,
+  last_name  text not null,
+  phone      text,
+  created_at timestamptz default now()
+);
+
+alter table public.owner_profiles enable row level security;
+
+create policy "Owners can read own profile"
+  on public.owner_profiles for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+create policy "Owners can insert own profile"
+  on public.owner_profiles for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+create policy "Owners can update own profile"
+  on public.owner_profiles for update
+  to authenticated
+  using (auth.uid() = user_id);
+
+create policy "Admins can read all owner profiles"
+  on public.owner_profiles for select
+  to authenticated
+  using (exists (
+    select 1 from public.users
+    where id = auth.uid() and role = 'admin'
+  ));

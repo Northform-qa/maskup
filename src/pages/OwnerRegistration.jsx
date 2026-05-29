@@ -218,6 +218,47 @@ function Step1({ data, onChange }) {
         />
       </div>
 
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            First name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={data.first_name}
+            onChange={(e) => onChange('first_name', e.target.value)}
+            placeholder="Jane"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Last name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={data.last_name}
+            onChange={(e) => onChange('last_name', e.target.value)}
+            placeholder="Smith"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Your phone number <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="tel"
+          value={data.owner_phone}
+          onChange={(e) => onChange('owner_phone', e.target.value)}
+          placeholder="(519) 555-0000"
+          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+        />
+        <p className="text-xs text-gray-400 mt-1">This is your contact number as the field owner — not your field's public phone number.</p>
+      </div>
+
       <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
         <p className="text-xs text-green-700 font-medium">✓ Free basic listing · approved in under 48h</p>
       </div>
@@ -590,6 +631,9 @@ export default function OwnerRegistration() {
     email: '',
     password: '',
     display_name: '',
+    first_name: '',
+    last_name: '',
+    owner_phone: '',
     name: 'Combat Zone Paintball',
     city: 'Woodstock',
     province: 'ON',
@@ -720,6 +764,15 @@ export default function OwnerRegistration() {
       }
     }
 
+    // Write owner profile — non-blocking
+    const { error: profileError } = await supabase.from('owner_profiles').insert({
+      user_id:    authData.user.id,
+      first_name: formData.first_name.trim(),
+      last_name:  formData.last_name.trim(),
+      phone:      formData.owner_phone.trim() || null,
+    })
+    if (profileError) console.error('owner_profiles insert failed:', profileError.message)
+
     setSubmitted(true)
     setSubmitting(false)
   }
@@ -737,6 +790,20 @@ export default function OwnerRegistration() {
       }
       if (formData.password.length < 8) {
         setError('Password must be at least 8 characters.')
+        return
+      }
+      if (!formData.first_name.trim() || !formData.last_name.trim()) {
+        setError('First name and last name are required.')
+        return
+      }
+      if (!formData.owner_phone.trim()) {
+        setError('Your phone number is required.')
+        return
+      }
+      const ownerDigits = formData.owner_phone.replace(/\D/g, '')
+      const validOwnerPhone = ownerDigits.length === 10 || (ownerDigits.length === 11 && ownerDigits[0] === '1')
+      if (!validOwnerPhone) {
+        setError('Please enter a valid phone number (e.g. (519) 555-0000).')
         return
       }
     }

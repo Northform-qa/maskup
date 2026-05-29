@@ -183,8 +183,12 @@ function PendingCard({ field, onApprove, onReject, saving }) {
   }
 
   const owner = field.users
+  const profile = owner?.owner_profiles?.[0]
+  const ownerName = profile
+    ? `${profile.first_name} ${profile.last_name}`.trim()
+    : owner?.display_name
   const ownerLabel = owner
-    ? [owner.display_name, owner.email].filter(Boolean).join(' — ')
+    ? [ownerName, owner.email].filter(Boolean).join(' — ')
     : null
 
   return (
@@ -192,7 +196,7 @@ function PendingCard({ field, onApprove, onReject, saving }) {
       <div className="px-5 pt-4 pb-3 border-b border-gray-100">
         <h2 className="text-base font-bold text-gray-900 mb-1">{field.name}</h2>
         {ownerLabel && (
-          <p className="text-xs text-gray-400 mb-2">Submitted by {ownerLabel}</p>
+          <p className="text-xs text-gray-400 mb-2">Submitted by: {ownerLabel}</p>
         )}
         <div className="flex items-start justify-between gap-2">
           <FieldTags field={field} />
@@ -536,7 +540,7 @@ export default function AdminDashboard() {
           { data: published, error: publishedErr },
           { data: hidden, error: hiddenErr },
         ] = await Promise.all([
-          supabase.from('fields').select('*, users!owner_id(display_name, email)').eq('listing_status', 'pending').is('claim_requested_by', null).order('created_at', { ascending: false }),
+          supabase.from('fields').select('*, users!owner_id(display_name, email, owner_profiles(first_name, last_name))').eq('listing_status', 'pending').is('claim_requested_by', null).order('created_at', { ascending: false }),
           supabase.from('fields').select('*, users!claim_requested_by(display_name, email)').not('claim_requested_by', 'is', null).eq('claimed', false).order('claim_requested_at', { ascending: false }),
           supabase.from('fields').select('*').eq('listing_status', 'published').order('name'),
           supabase.from('fields').select('*').eq('listing_status', 'hidden').order('name'),
