@@ -12,6 +12,7 @@ import DiscoverPage from '../DiscoverPage'
 const mockRawField = {
   id: 'field-1',
   name: 'Alpha Field',
+  claimed: true,
   city: 'Toronto',
   province: 'ON',
   weather_status: 'open',

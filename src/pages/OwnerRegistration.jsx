@@ -1,6 +1,142 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+
+// ── Claim path: unclaimed field search ───────────────────────────
+function ClaimSearchScreen({ onContinue, onBack }) {
+  const [fields, setFields] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState(null)
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase
+        .from('fields')
+        .select('id, name, city, province, address, postal_code, phone, website, lat, lng, num_fields, typical_capacity, field_types')
+        .eq('claimed', false)
+        .order('name')
+      setFields(data ?? [])
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const filtered = query.trim().length === 0
+    ? fields
+    : fields.filter((f) => {
+        const q = query.toLowerCase()
+        return f.name?.toLowerCase().includes(q) || f.city?.toLowerCase().includes(q)
+      })
+
+  return (
+    <div className="min-h-screen bg-cream-100 py-8 px-4">
+      <div className="max-w-lg mx-auto">
+        <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-700 mb-6 flex items-center gap-1">
+          ← Back
+        </button>
+        <div className="mb-5">
+          <h1 className="text-xl font-bold text-gray-900 mb-1">Find your field</h1>
+          <p className="text-sm text-gray-500">Search for your field in our existing listings</p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-100">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name or city…"
+              autoFocus
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+            />
+          </div>
+
+          <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto">
+            {loading ? (
+              <div className="py-8 text-center text-gray-400 text-sm">Loading…</div>
+            ) : filtered.length === 0 ? (
+              <div className="py-8 text-center text-gray-400 text-sm px-4">
+                {query ? 'No fields found — try a different name or city.' : 'No unclaimed fields available.'}
+              </div>
+            ) : (
+              filtered.map((field) => {
+                const isSelected = selected?.id === field.id
+                return (
+                  <button
+                    key={field.id}
+                    onClick={() => setSelected(isSelected ? null : field)}
+                    className={`w-full text-left px-4 py-3 flex items-center justify-between gap-3 transition-colors border-l-4 ${
+                      isSelected
+                        ? 'bg-amber-50 border-amber-400'
+                        : 'border-transparent hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold leading-tight ${isSelected ? 'text-amber-800' : 'text-gray-900'}`}>
+                        {field.name}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {field.city}, {field.province}
+                        {field.address && ` · ${field.address}`}
+                      </p>
+                    </div>
+                    {isSelected && <span className="text-amber-500 text-base flex-shrink-0">✓</span>}
+                  </button>
+                )
+              })
+            )}
+          </div>
+        </div>
+
+        {selected && (
+          <button
+            onClick={() => onContinue(selected)}
+            className="w-full mt-4 py-3 bg-brand text-white text-sm font-semibold rounded-xl hover:bg-brand-dark transition-colors"
+          >
+            Continue to claim {selected.name} →
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Step 0 path selector ──────────────────────────────────────────
+function PathSelectScreen({ onSelectNew, onSelectClaim }) {
+  return (
+    <div className="min-h-screen bg-cream-100 py-12 px-4">
+      <div className="max-w-lg mx-auto">
+        <div className="text-center mb-10">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Let's get your field listed</h1>
+          <p className="text-sm text-gray-500">Choose how you'd like to proceed</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
+            onClick={onSelectNew}
+            className="group bg-white border-2 border-gray-200 hover:border-brand rounded-2xl p-6 text-left transition-all hover:shadow-md"
+          >
+            <span className="text-4xl block mb-3">🏕️</span>
+            <h2 className="text-base font-bold text-gray-900 mb-1 group-hover:text-brand transition-colors">
+              Register a New Field
+            </h2>
+            <p className="text-sm text-gray-500">Your field isn't on MaskUp yet</p>
+          </button>
+          <button
+            onClick={onSelectClaim}
+            className="group bg-white border-2 border-gray-200 hover:border-amber-400 rounded-2xl p-6 text-left transition-all hover:shadow-md"
+          >
+            <span className="text-4xl block mb-3">🎯</span>
+            <h2 className="text-base font-bold text-gray-900 mb-1 group-hover:text-amber-600 transition-colors">
+              Claim an Existing Listing
+            </h2>
+            <p className="text-sm text-gray-500">Your field is already on MaskUp but hasn't been claimed</p>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const STEPS = ['Account', 'Field details', 'Hours & pricing', 'Photos & submit']
 
@@ -439,6 +575,17 @@ async function geocodeAddress(address, city, province, postalCode) {
 
 export default function OwnerRegistration() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const [screen, setScreen] = useState('path_select')
+  const [path, setPath] = useState('new')
+
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('claim') === 'true') {
+      setPath('claim')
+      setScreen('claim_search')
+    }
+  }, [])
+  const [selectedClaimField, setSelectedClaimField] = useState(null)
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -509,10 +656,11 @@ export default function OwnerRegistration() {
 
     const { lat, lng } = formData.address.trim()
       ? await geocodeAddress(formData.address.trim(), formData.city.trim(), formData.province, formData.postal_code.trim())
+      : path === 'claim'
+      ? { lat: selectedClaimField?.lat ?? null, lng: selectedClaimField?.lng ?? null }
       : { lat: null, lng: null }
 
-    const { error: fieldError } = await supabase.from('fields').insert({
-      owner_id: authData.user.id,
+    const fieldPayload = {
       name: formData.name.trim(),
       city: formData.city.trim(),
       province: formData.province,
@@ -531,12 +679,35 @@ export default function OwnerRegistration() {
       website: formData.website || null,
       description: formData.description || null,
       listing_status: 'pending',
-    })
+    }
 
-    if (fieldError) {
-      setError(fieldError.message)
-      setSubmitting(false)
-      return
+    if (path === 'claim') {
+      const { error: claimError } = await supabase
+        .from('fields')
+        .update({
+          ...fieldPayload,
+          owner_id: authData.user.id,
+          claim_requested_by: authData.user.id,
+          claim_requested_at: new Date().toISOString(),
+        })
+        .eq('id', selectedClaimField.id)
+
+      if (claimError) {
+        setError(claimError.message)
+        setSubmitting(false)
+        return
+      }
+    } else {
+      const { error: fieldError } = await supabase.from('fields').insert({
+        owner_id: authData.user.id,
+        ...fieldPayload,
+      })
+
+      if (fieldError) {
+        setError(fieldError.message)
+        setSubmitting(false)
+        return
+      }
     }
 
     setSubmitted(true)
@@ -578,6 +749,37 @@ export default function OwnerRegistration() {
 
   const StepComponent = [Step1, Step2, Step3, Step4][step]
 
+  if (screen === 'path_select') {
+    return (
+      <PathSelectScreen
+        onSelectNew={() => { setPath('new'); setScreen('form') }}
+        onSelectClaim={() => { setPath('claim'); setScreen('claim_search') }}
+      />
+    )
+  }
+
+  if (screen === 'claim_search') {
+    return (
+      <ClaimSearchScreen
+        onBack={() => setScreen('path_select')}
+        onContinue={(field) => {
+          setSelectedClaimField(field)
+          setFormData((prev) => ({
+            ...prev,
+            name: field.name || '',
+            address: field.address || '',
+            city: field.city || '',
+            province: field.province || 'ON',
+            postal_code: field.postal_code || '',
+            phone: field.phone || '',
+            website: field.website || '',
+          }))
+          setScreen('form')
+        }}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-cream-100 py-8 px-4">
       <div className="max-w-lg mx-auto">
@@ -602,6 +804,11 @@ export default function OwnerRegistration() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          {path === 'claim' && selectedClaimField && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-sm text-amber-800 leading-relaxed">
+              You're claiming <span className="font-semibold">{selectedClaimField.name}</span>. Pre-filled details came from our existing listing — please review and update anything that's changed.
+            </div>
+          )}
           <h2 className="text-base font-semibold text-gray-900 mb-4">
             {['Your account', 'About your field', 'Hours & pricing', 'Photos & submit'][step]}
           </h2>

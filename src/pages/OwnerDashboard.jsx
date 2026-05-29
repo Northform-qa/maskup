@@ -234,15 +234,27 @@ export default function OwnerDashboard() {
 
   if (!field) {
     return (
-      <div className="min-h-screen bg-cream-100 flex items-center justify-center px-4 text-center">
-        <div>
-          <p className="text-sm text-gray-500 mb-3">No field found for your account.</p>
-          <button
-            onClick={() => navigate('/register')}
-            className="px-4 py-2 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-dark transition-colors"
-          >
-            Register a field →
-          </button>
+      <div className="min-h-screen bg-cream-100 flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">🏕️</span>
+          </div>
+          <h2 className="text-lg font-bold text-gray-900 mb-1">You don't have a field listed yet</h2>
+          <p className="text-sm text-gray-500 mb-6">Get your field on MaskUp to reach more players.</p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => navigate('/register')}
+              className="w-full px-4 py-3 bg-brand text-white text-sm font-semibold rounded-xl hover:bg-brand-dark transition-colors"
+            >
+              Register a New Field
+            </button>
+            <button
+              onClick={() => navigate('/register?claim=true')}
+              className="w-full px-4 py-3 border-2 border-amber-300 text-amber-700 text-sm font-semibold rounded-xl hover:bg-amber-50 transition-colors"
+            >
+              Claim an Existing Listing
+            </button>
+          </div>
         </div>
       </div>
     )

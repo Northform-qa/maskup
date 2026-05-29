@@ -8,7 +8,7 @@ const REJECTION_REASONS = [
   'Not a paintball field',
 ]
 
-const TABS = ['Pending', 'Published', 'Hidden']
+const TABS = ['Pending', 'Claims', 'Published', 'Hidden']
 
 function timeAgo(iso) {
   if (!iso) return '—'
@@ -287,10 +287,134 @@ function ManagedCard({ field, onHide, onRestore, onToggleFeature, onDelete, savi
   )
 }
 
+// ── Claim card helpers ─────────────────────────────────────────────────────
+function computeAddedFields(field) {
+  const added = []
+  if (Object.values(field.hours ?? {}).some((h) => typeof h === 'object' && !h.closed)) added.push('hours')
+  if (field.pricing) added.push('pricing')
+  if (field.rentals_available) added.push('rentals')
+  if ((field.field_types ?? []).length > 0) added.push('game types')
+  if (field.description) added.push('description')
+  if (field.phone) added.push('phone')
+  if (field.website) added.push('website')
+  return added
+}
+
+function ClaimCard({ field, onApprove, onReject, saving }) {
+  const [showReject, setShowReject] = useState(false)
+  const [selectedReason, setSelectedReason] = useState(null)
+  const [customNote, setCustomNote] = useState('')
+
+  const claimant = field.users
+  const claimantLabel = claimant
+    ? [claimant.display_name, claimant.email].filter(Boolean).join(' — ')
+    : null
+  const addedFields = computeAddedFields(field)
+
+  function handleRejectClick() {
+    if (!showReject) { setShowReject(true); return }
+    if (selectedReason) onReject(field.id, selectedReason, customNote)
+  }
+
+  function handleCancel() {
+    setShowReject(false)
+    setSelectedReason(null)
+    setCustomNote('')
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="px-5 pt-4 pb-3 border-b border-gray-100">
+        <h2 className="text-base font-bold text-gray-900 mb-0.5">{field.name}</h2>
+        <p className="text-xs text-gray-500 mb-1">{field.city}, {field.province}</p>
+        {claimantLabel && (
+          <p className="text-xs text-gray-400 mb-2">Claim by {claimantLabel}</p>
+        )}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <span className="text-xs text-gray-400">🕐 {timeAgo(field.claim_requested_at)}</span>
+          {addedFields.length > 0 && (
+            <span className="text-xs text-brand font-medium">Added: {addedFields.join(', ')}</span>
+          )}
+        </div>
+      </div>
+
+      {showReject && (
+        <div className="px-5 pb-4 pt-3">
+          <p className="text-xs font-semibold text-gray-600 mb-2">Send rejection reason to claimant</p>
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            {REJECTION_REASONS.map((reason) => (
+              <button
+                key={reason}
+                onClick={() => setSelectedReason(reason)}
+                className={`px-3 py-2 rounded-lg border text-xs font-medium text-left transition-colors ${
+                  selectedReason === reason
+                    ? 'bg-red-50 border-red-400 text-red-700'
+                    : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
+                }`}
+              >
+                {reason}
+              </button>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={customNote}
+            onChange={(e) => setCustomNote(e.target.value)}
+            placeholder="Optional: add a note for the claimant"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 text-gray-600"
+          />
+        </div>
+      )}
+
+      <div className="px-5 pb-4 flex items-center gap-3 flex-wrap">
+        {!showReject ? (
+          <>
+            <button
+              onClick={() => onApprove(field.id, field.name)}
+              disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50"
+            >
+              ✓ Approve claim
+            </button>
+            <button
+              onClick={handleRejectClick}
+              disabled={saving}
+              className="px-4 py-2.5 border border-red-300 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+            >
+              Reject
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={handleRejectClick}
+              disabled={!selectedReason || saving}
+              className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
+                selectedReason && !saving
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Confirm reject
+            </button>
+            <button
+              onClick={handleCancel}
+              className="px-4 py-2.5 border border-gray-300 text-sm font-medium text-gray-500 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Main dashboard ─────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('Pending')
   const [pendingFields, setPendingFields] = useState([])
+  const [pendingClaims, setPendingClaims] = useState([])
   const [publishedFields, setPublishedFields] = useState([])
   const [hiddenFields, setHiddenFields] = useState([])
   const [loading, setLoading] = useState(true)
@@ -308,19 +432,22 @@ export default function AdminDashboard() {
       try {
         const [
           { data: pending, error: pendingErr },
+          { data: claims, error: claimsErr },
           { data: published, error: publishedErr },
           { data: hidden, error: hiddenErr },
         ] = await Promise.all([
-          supabase.from('fields').select('*, users!owner_id(display_name, email)').eq('listing_status', 'pending').order('created_at', { ascending: false }),
+          supabase.from('fields').select('*, users!owner_id(display_name, email)').eq('listing_status', 'pending').is('claim_requested_by', null).order('created_at', { ascending: false }),
+          supabase.from('fields').select('*, users!claim_requested_by(display_name, email)').not('claim_requested_by', 'is', null).eq('claimed', false).order('claim_requested_at', { ascending: false }),
           supabase.from('fields').select('*').eq('listing_status', 'published').order('name'),
           supabase.from('fields').select('*').eq('listing_status', 'hidden').order('name'),
         ])
 
-        const err = pendingErr || publishedErr || hiddenErr
+        const err = pendingErr || claimsErr || publishedErr || hiddenErr
         if (err) {
           setError(err.message)
         } else {
           setPendingFields(pending ?? [])
+          setPendingClaims(claims ?? [])
           setPublishedFields(published ?? [])
           setHiddenFields(hidden ?? [])
         }
@@ -397,8 +524,42 @@ export default function AdminDashboard() {
     setSaving(false)
   }
 
+  async function handleApproveClaim(id, fieldName) {
+    setSaving(true)
+    const claim = pendingClaims.find((f) => f.id === id)
+    const { error } = await supabase.from('fields').update({
+      claimed: true,
+      owner_id: claim?.claim_requested_by,
+      listing_status: 'published',
+      claim_requested_by: null,
+      claim_requested_at: null,
+    }).eq('id', id)
+    if (error) { setError(error.message) } else {
+      setPendingClaims((prev) => prev.filter((f) => f.id !== id))
+      showToast(`Claim approved — ${fieldName} is now live`)
+    }
+    setSaving(false)
+  }
+
+  async function handleRejectClaim(id, selectedReason, customNote) {
+    setSaving(true)
+    const rejection_reason = selectedReason + (customNote?.trim() ? ` — ${customNote.trim()}` : '')
+    const { error } = await supabase.from('fields').update({
+      listing_status: 'rejected',
+      rejection_reason,
+      claim_requested_by: null,
+      claim_requested_at: null,
+    }).eq('id', id)
+    if (error) { setError(error.message) } else {
+      setPendingClaims((prev) => prev.filter((f) => f.id !== id))
+      showToast('Claim rejected')
+    }
+    setSaving(false)
+  }
+
   const counts = {
     Pending: pendingFields.length,
+    Claims: pendingClaims.length,
     Published: publishedFields.length,
     Hidden: hiddenFields.length,
   }
@@ -447,7 +608,9 @@ export default function AdminDashboard() {
               {tab}
               {counts[tab] > 0 && (
                 <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${
-                  tab === 'Pending' ? 'bg-orange-100 text-orange-700' : 'bg-gray-200 text-gray-600'
+                  tab === 'Pending' ? 'bg-orange-100 text-orange-700' :
+                  tab === 'Claims' ? 'bg-amber-100 text-amber-700' :
+                  'bg-gray-200 text-gray-600'
                 }`}>
                   {counts[tab]}
                 </span>
@@ -487,6 +650,29 @@ export default function AdminDashboard() {
                       field={field}
                       onApprove={handleApprove}
                       onReject={handleReject}
+                      saving={saving}
+                    />
+                  ))}
+                </div>
+              )
+            )}
+
+            {/* Claims tab */}
+            {activeTab === 'Claims' && (
+              pendingClaims.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+                  <span className="text-4xl mb-3 block">🎯</span>
+                  <h3 className="text-lg font-semibold text-gray-800">No pending claims</h3>
+                  <p className="text-sm text-gray-500 mt-1">Claim requests will appear here.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pendingClaims.map((field) => (
+                    <ClaimCard
+                      key={field.id}
+                      field={field}
+                      onApprove={handleApproveClaim}
+                      onReject={handleRejectClaim}
                       saving={saving}
                     />
                   ))}
