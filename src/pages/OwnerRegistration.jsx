@@ -677,15 +677,28 @@ export default function OwnerRegistration() {
     }
 
     if (path === 'claim') {
-      const { error: claimError } = await supabase
-        .from('fields')
-        .update({
-          ...fieldPayload,
-          owner_id: authData.user.id,
-          claim_requested_by: authData.user.id,
-          claim_requested_at: new Date().toISOString(),
-        })
-        .eq('id', selectedClaimField.id)
+      const { error: claimError } = await supabase.rpc('submit_claim_request', {
+        p_field_id:          selectedClaimField.id,
+        p_user_id:           authData.user.id,
+        p_name:              fieldPayload.name,
+        p_address:           fieldPayload.address,
+        p_city:              fieldPayload.city,
+        p_province:          fieldPayload.province,
+        p_postal_code:       fieldPayload.postal_code,
+        p_lat:               fieldPayload.lat,
+        p_lng:               fieldPayload.lng,
+        p_field_types:       fieldPayload.field_types,
+        p_num_fields:        fieldPayload.num_fields,
+        p_typical_capacity:  fieldPayload.typical_capacity,
+        p_rentals_available: fieldPayload.rentals_available,
+        p_hours:             fieldPayload.hours,
+        p_seasonal_start:    fieldPayload.seasonal_start,
+        p_seasonal_end:      fieldPayload.seasonal_end,
+        p_pricing:           fieldPayload.pricing,
+        p_phone:             fieldPayload.phone,
+        p_website:           fieldPayload.website,
+        p_description:       fieldPayload.description,
+      })
 
       if (claimError) {
         setError(claimError.message)
@@ -716,6 +729,10 @@ export default function OwnerRegistration() {
         setError('Email and password are required.')
         return
       }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+        setError('Please enter a valid email address.')
+        return
+      }
       if (formData.password.length < 8) {
         setError('Password must be at least 8 characters.')
         return
@@ -731,6 +748,28 @@ export default function OwnerRegistration() {
       if (missing.length > 0) {
         setError(`Please fill in: ${missing.join(', ')}.`)
         return
+      }
+    }
+    if (step === 2) {
+      const rawPhone = formData.phone?.trim()
+      if (rawPhone) {
+        const digits = rawPhone.replace(/\D/g, '')
+        const validLength = digits.length === 10 || (digits.length === 11 && digits[0] === '1')
+        if (!validLength) {
+          setError('Please enter a valid phone number (e.g. (519) 555-0000).')
+          return
+        }
+      }
+      const rawWeb = formData.website?.trim()
+      if (rawWeb) {
+        try {
+          const u = new URL(rawWeb.match(/^https?:\/\//i) ? rawWeb : `https://${rawWeb}`)
+          const tld = u.hostname.split('.').pop()
+          if (!u.hostname.includes('.') || tld.length < 2) throw new Error()
+        } catch {
+          setError('Please enter a valid website URL (e.g. yourfield.ca or https://yourfield.com)')
+          return
+        }
       }
     }
     if (step < STEPS.length - 1) {
