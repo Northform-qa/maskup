@@ -261,7 +261,7 @@ export default function FieldDetailPage() {
         )}
 
         {/* ── "I Mentioned It" CTA ── */}
-        {!field.claimed && (
+        {!field.claimed && user && (
           <div className="mb-5">
             <p className="text-xs text-gray-500 mb-2">Already mentioned MaskUp.gg at this field? Let us know!</p>
             <button
