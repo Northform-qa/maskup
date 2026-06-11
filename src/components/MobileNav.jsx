@@ -16,7 +16,7 @@ export default function MobileNav() {
 
   return (
     <>
-      <header className="md:hidden fixed top-0 inset-x-0 bg-white border-b border-gray-200 z-50 flex items-center px-4 h-12">
+      <header className="md:hidden fixed top-0 inset-x-0 bg-white border-b border-gray-200 z-50 flex items-center justify-center h-12">
         <Link to="/">
           <img src={shieldIcon} alt="MaskUp.gg" className="h-8 w-auto" />
         </Link>
