@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import MaskUpLogo from '../components/MaskUpLogo'
+import compactLockup from '../assets/logos/green/Compact Horizontal Lockup.svg'
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -64,11 +64,8 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-cream-100 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-6">
-            <MaskUpLogo className="h-7 w-auto" />
-            <span className="font-bold text-brand tracking-tight text-lg">
-              MaskUp<span className="text-sm font-semibold opacity-60">.gg</span>
-            </span>
+          <Link to="/" className="inline-flex mb-6">
+            <img src={compactLockup} alt="MaskUp.gg" className="h-9 w-auto" />
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Choose a new password</h1>
           <p className="text-sm text-gray-500 mt-1">Must be at least 8 characters.</p>
