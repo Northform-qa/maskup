@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import compactLockup from '../assets/logo/Compact Horizontal Lockup.svg'
+import compactLockup from '../assets/logos/green/Compact Horizontal Lockup.svg'
 
 const STATIC_TABS = [
   { to: '/', label: 'Discover', icon: '🗺️' },

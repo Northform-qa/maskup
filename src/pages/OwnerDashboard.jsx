@@ -5,6 +5,7 @@ import FieldTypeChip from '../components/FieldTypeChip'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { normalizeField } from '../lib/fieldUtils'
+import shieldIcon from '../assets/logos/green/Shield Icon Only.svg'
 
 const STATUS_OPTIONS = [
   {
@@ -236,9 +237,7 @@ export default function OwnerDashboard() {
     return (
       <div className="min-h-screen bg-cream-100 flex items-center justify-center px-4">
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">🏕️</span>
-          </div>
+          <img src={shieldIcon} alt="" className="w-16 h-16 mx-auto mb-4 opacity-60" />
           <h2 className="text-lg font-bold text-gray-900 mb-1">You don't have a field listed yet</h2>
           <p className="text-sm text-gray-500 mb-6">Get your field on MaskUp to reach more players.</p>
           <div className="flex flex-col gap-3">
@@ -486,7 +485,10 @@ export default function OwnerDashboard() {
               </div>
 
               {events.length === 0 ? (
-                <p className="text-xs text-gray-400 py-4 text-center">No upcoming events. Post one to attract more players.</p>
+                <div className="py-6 text-center">
+                  <img src={shieldIcon} alt="" className="w-16 h-16 mx-auto mb-4 opacity-60" />
+                  <p className="text-xs text-gray-400">No upcoming events. Post one to attract more players.</p>
+                </div>
               ) : (
                 <div className="divide-y divide-gray-100">
                   {events.map((event) => {

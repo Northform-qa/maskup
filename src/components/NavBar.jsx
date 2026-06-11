@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import compactLockup from '../assets/logo/Full Horizontal Lockup.svg'
+import compactLockup from '../assets/logos/green/Full Horizontal Lockup.svg'
 
 const NAV_LINKS = [
   { to: '/', label: 'Discover' },

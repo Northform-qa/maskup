@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<!--
+  OG IMAGE GENERATOR — MaskUp.gg
+  ================================
+  This file is a design reference for manually exporting public/og-image.png.
+
+  To export:
+  1. Open this file in a browser
+  2. Use a screenshot tool or browser extension to capture the #og-frame div at exactly 1200x630px
+     (e.g. GoFullPage, Screely, or open in Chrome DevTools → device toolbar → set 1200x630)
+  3. Save as public/og-image.png
+
+  OR open in Figma/Canva/design tool and recreate at 1200x630px using:
+  - Background: #F5F2EB
+  - Logo: src/assets/logos/green/Full Horizontal Lockup.svg
+  - Tagline: "Ontario's Paintball & Airsoft Community"
+  - Font: Inter, bold
+-->
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #888; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: Inter, system-ui, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <div id="og-frame" style="width:1200px;height:630px;background:#F5F2EB;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;flex-shrink:0;">
+      <img src="../../assets/logos/green/Full Horizontal Lockup.svg" alt="MaskUp.gg" style="height:120px;width:auto;" />
+      <p style="font-size:32px;font-weight:700;color:#3B6D11;letter-spacing:-0.5px;">Ontario's Paintball &amp; Airsoft Community</p>
+    </div>
+  </body>
+</html>

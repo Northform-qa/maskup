@@ -6,6 +6,7 @@ import MapboxMap from '../components/MapboxMap'
 import StatusBadge from '../components/StatusBadge'
 import StarRating from '../components/StarRating'
 import ActivePlayers from '../components/ActivePlayers'
+import shieldIcon from '../assets/logos/green/Shield Icon Only.svg'
 import HeroPhoto from '../components/HeroPhoto'
 import WeatherChip from '../components/WeatherChip'
 import { supabase } from '../lib/supabase'
@@ -317,6 +318,7 @@ export default function DiscoverPage() {
           <div className="py-16 text-center text-red-400 text-sm px-6">{error}</div>
         ) : displayed.length === 0 ? (
           <div className="py-16 text-center text-gray-400 text-sm">
+            <img src={shieldIcon} alt="" className="w-16 h-16 mx-auto mb-4 opacity-60" />
             {searchActive ? 'No fields found.' : 'No fields match this filter.'}
           </div>
         ) : (
