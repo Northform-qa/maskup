@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import shieldIcon from '../assets/logo/Shield Icon Only.svg'
 
 const STATIC_TABS = [
   { to: '/', label: 'Discover', icon: '🗺️' },
@@ -14,6 +15,12 @@ export default function MobileNav() {
   const youTo = user ? '/profile' : '/login'
 
   return (
+    <>
+      <header className="md:hidden fixed top-0 inset-x-0 bg-white border-b border-gray-200 z-50 flex items-center px-4 h-12">
+        <Link to="/">
+          <img src={shieldIcon} alt="MaskUp.gg" className="h-8 w-auto" />
+        </Link>
+      </header>
     <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 z-50 flex">
       {STATIC_TABS.map((tab) => (
         <Link
@@ -37,5 +44,6 @@ export default function MobileNav() {
         <span>You</span>
       </Link>
     </nav>
+    </>
   )
 }
