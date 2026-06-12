@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
-const FIELD_TYPES = ['Woodball', 'Speedball', 'Scenario', 'Airsoft', 'Rec ball', 'Hyperball', 'Indoor', 'Tournament']
+const FIELD_TYPES = ['Woodsball', 'Speedball', 'Scenario', 'Airsoft', 'Rec ball', 'Hyperball', 'Indoor', 'Tournament']
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const PROVINCES = ['ON', 'QC', 'BC', 'AB', 'MB', 'SK', 'NS', 'NB', 'NL', 'PE', 'NT', 'YT', 'NU']
 

@@ -183,7 +183,7 @@ function PathSelectScreen({ onSelectNew, onSelectClaim }) {
 
 const STEPS = ['Account', 'Field details', 'Hours & pricing', 'Photos & submit']
 
-const FIELD_TYPES = ['Woodball', 'Speedball', 'Scenario', 'Airsoft', 'Rec ball', 'Hyperball', 'Indoor', 'Tournament']
+const FIELD_TYPES = ['Woodsball', 'Speedball', 'Scenario', 'Airsoft', 'Rec ball', 'Hyperball', 'Indoor', 'Tournament']
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -682,7 +682,7 @@ export default function OwnerRegistration() {
     province: 'ON',
     address: '',
     postal_code: '',
-    field_types: ['Woodball', 'Scenario'],
+    field_types: ['Woodsball', 'Scenario'],
     num_fields: '5',
     typical_capacity: '',
     rentals: ['Markers', 'Masks'],

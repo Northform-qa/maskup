@@ -4,8 +4,8 @@ import FieldTypeChip from '../FieldTypeChip'
 
 describe('FieldTypeChip', () => {
   it('renders the type label', () => {
-    render(<FieldTypeChip type="Woodball" />)
-    expect(screen.getByText('Woodball')).toBeInTheDocument()
+    render(<FieldTypeChip type="Woodsball" />)
+    expect(screen.getByText('Woodsball')).toBeInTheDocument()
   })
 
   it('applies Airsoft teal colour classes', () => {
@@ -13,8 +13,8 @@ describe('FieldTypeChip', () => {
     expect(container.firstChild).toHaveClass('bg-teal-100', 'text-teal-800')
   })
 
-  it('applies Woodball green colour classes', () => {
-    const { container } = render(<FieldTypeChip type="Woodball" />)
+  it('applies Woodsball green colour classes', () => {
+    const { container } = render(<FieldTypeChip type="Woodsball" />)
     expect(container.firstChild).toHaveClass('bg-green-100', 'text-green-800')
   })
 

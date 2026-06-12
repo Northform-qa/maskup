@@ -115,7 +115,7 @@ export const FIELDS = [
     website: 'flagraiders.com',
     description:
       "A woodball destination with 14 playable fields across wooded terrain. Ontario's most field-diverse paintball park. Bring your own gear or rent on-site.",
-    field_types: ['Woodball', 'Scenario', 'Speedball'],
+    field_types: ['Woodsball', 'Scenario', 'Speedball'],
     num_fields: 14,
     typical_capacity: 200,
     active_players_now: 87,
@@ -169,7 +169,7 @@ export const FIELDS = [
     website: 'survivaltacticsinc.com',
     description:
       'Over 20 acres of play space — walk, crawl and run through forest and obstacle fields for a real battle experience. Ideal for birthday parties, bachelor parties and corporate events.',
-    field_types: ['Woodball', 'Scenario'],
+    field_types: ['Woodsball', 'Scenario'],
     num_fields: 6,
     typical_capacity: 120,
     active_players_now: null,
@@ -210,7 +210,7 @@ export const FIELDS = [
     website: 'combatpursuit.com',
     description:
       "GTA's closest outdoor paintball park — only 15 minutes from Toronto city limits. Separate beginner and advanced games. Multiple unique outdoor playing fields. Also offers MicroBall low-impact and Airsoft.",
-    field_types: ['Woodball', 'Scenario', 'Speedball', 'Airsoft'],
+    field_types: ['Woodsball', 'Scenario', 'Speedball', 'Airsoft'],
     num_fields: 8,
     typical_capacity: 150,
     active_players_now: 22,
@@ -251,7 +251,7 @@ export const FIELDS = [
     website: 'dmzpaintball.com',
     description:
       'Central to Niagara, located in St. Catharines. Open all year with both indoor and outdoor fields. Best pro shop in Niagara with over 300 paintball and airsoft guns in stock. Great for birthday parties and bachelor parties.',
-    field_types: ['Woodball', 'Speedball', 'Scenario', 'Airsoft'],
+    field_types: ['Woodsball', 'Speedball', 'Scenario', 'Airsoft'],
     num_fields: 5,
     typical_capacity: 100,
     active_players_now: null,
@@ -301,7 +301,7 @@ export const PENDING_FIELDS = [
     phone: '(519) 555-0134',
     website: 'combatzone.ca',
     email: 'owner@combatzone.ca',
-    field_types: ['Woodball', 'Scenario'],
+    field_types: ['Woodsball', 'Scenario'],
     num_fields: 5,
     typical_capacity: 60,
     rentals_available: true,
@@ -338,7 +338,7 @@ export const PENDING_FIELDS = [
   },
 ]
 
-export const FILTER_CHIPS = ['All', 'Woodball', 'Speedball', 'Scenario', 'Airsoft', 'Hyperball', 'Indoor', 'Low Impact']
+export const FILTER_CHIPS = ['All', 'Woodsball', 'Speedball', 'Scenario', 'Airsoft', 'Hyperball', 'Indoor', 'Low Impact']
 
 export const MOCK_OWNER_DASHBOARD = {
   display_name: 'CZ',
@@ -350,7 +350,7 @@ export const MOCK_OWNER_DASHBOARD = {
     province: 'ON',
     phone: '(905) 555-0220',
     website: 'combatzonepaintball.ca',
-    field_types: ['Woodball', 'Scenario', 'Speedball'],
+    field_types: ['Woodsball', 'Scenario', 'Speedball'],
     num_fields: 7,
     rentals_available: true,
     rental_pricing: 'Markers + masks included in session fee',

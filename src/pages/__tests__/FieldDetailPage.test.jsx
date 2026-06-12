@@ -16,7 +16,7 @@ const mockRawField = {
   city: 'Toronto',
   province: 'ON',
   weather_status: 'open',
-  field_types: ['Woodball', 'Speedball'],
+  field_types: ['Woodsball', 'Speedball'],
   num_fields: 4,
   typical_capacity: 80,
   pricing: '$35–60 per session',

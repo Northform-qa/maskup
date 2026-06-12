@@ -17,7 +17,7 @@ const mockRawField = {
   province: 'ON',
   weather_status: 'open',
   listing_status: 'published',
-  field_types: ['Woodball'],
+  field_types: ['Woodsball'],
   num_fields: 3,
   typical_capacity: 60,
   pricing: '$30–50 per session',

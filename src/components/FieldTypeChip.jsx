@@ -1,5 +1,5 @@
 const COLOR_MAP = {
-  Woodball: 'bg-green-100 text-green-800',
+  Woodsball: 'bg-green-100 text-green-800',
   Scenario: 'bg-amber-100 text-amber-800',
   Speedball: 'bg-blue-100 text-blue-800',
   Hyperball: 'bg-purple-100 text-purple-800',

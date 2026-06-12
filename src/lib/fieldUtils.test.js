@@ -166,14 +166,14 @@ describe('normalizeField', () => {
   const base = {
     id: '1',
     name: 'Test Field',
-    field_types: ['Woodball', 'Speedball', 'Woodball'],
+    field_types: ['Woodsball', 'Speedball', 'Woodsball'],
     hours: { Mon: '9am–5pm' },
     events: [],
   }
 
   it('deduplicates field_types', () => {
     const result = normalizeField(base)
-    expect(result.field_types).toEqual(['Woodball', 'Speedball'])
+    expect(result.field_types).toEqual(['Woodsball', 'Speedball'])
   })
 
   it('sets today_hours from hours object', () => {
