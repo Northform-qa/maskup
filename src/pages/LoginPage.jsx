@@ -52,7 +52,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <Link to="/">
-            <img src={compactLockup} alt="MaskUp.gg" style={{ width: '180px' }} className="h-auto" />
+            <img src={compactLockup} alt="MaskUp.gg" style={{ width: '260px' }} className="h-auto" />
           </Link>
         </div>
 
