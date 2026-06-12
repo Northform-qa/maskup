@@ -1,14 +1,10 @@
+// SQL — run once in Supabase SQL Editor if column doesn't exist:
+// ALTER TABLE public.fields ADD COLUMN IF NOT EXISTS rejection_reason text;
+
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { sanitizeUrl } from '../lib/sanitizeUrl'
-
-const REJECTION_REASONS = [
-  'Incomplete information',
-  'Cannot verify location',
-  'Duplicate listing',
-  'Not a paintball field',
-]
 
 const TABS = ['Pending', 'Claims', 'Published', 'Hidden']
 
@@ -168,20 +164,18 @@ function FieldInfoSection({ field }) {
 // ── Pending approval card ──────────────────────────────────────────────────
 function PendingCard({ field, onApprove, onReject, saving }) {
   const [showReject, setShowReject] = useState(false)
-  const [selectedReason, setSelectedReason] = useState(null)
-  const [customNote, setCustomNote] = useState('')
+  const [rejectReason, setRejectReason] = useState('')
 
   const v = computeVerifications(field)
 
   function handleRejectClick() {
     if (!showReject) { setShowReject(true); return }
-    if (selectedReason) onReject(field.id, selectedReason, customNote)
+    if (rejectReason.trim()) onReject(field.id, rejectReason.trim(), field.name)
   }
 
   function handleCancel() {
     setShowReject(false)
-    setSelectedReason(null)
-    setCustomNote('')
+    setRejectReason('')
   }
 
   const owner = field.users
@@ -234,28 +228,13 @@ function PendingCard({ field, onApprove, onReject, saving }) {
 
       {showReject && (
         <div className="px-5 pb-4">
-          <p className="text-xs font-semibold text-gray-600 mb-2">Send rejection reason to owner</p>
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            {REJECTION_REASONS.map((reason) => (
-              <button
-                key={reason}
-                onClick={() => setSelectedReason(reason)}
-                className={`px-3 py-2 rounded-lg border text-xs font-medium text-left transition-colors ${
-                  selectedReason === reason
-                    ? 'bg-red-50 border-red-400 text-red-700'
-                    : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
-                }`}
-              >
-                {reason}
-              </button>
-            ))}
-          </div>
-          <input
-            type="text"
-            value={customNote}
-            onChange={(e) => setCustomNote(e.target.value)}
-            placeholder="Optional: add a note for the owner"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 text-gray-600"
+          <label className="block text-xs font-semibold text-gray-600 mb-1.5">Reason for rejection</label>
+          <textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Tell the owner why their listing wasn't approved and what they need to fix..."
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 text-gray-700 resize-none"
           />
         </div>
       )}
@@ -282,18 +261,18 @@ function PendingCard({ field, onApprove, onReject, saving }) {
           <>
             <button
               onClick={handleRejectClick}
-              disabled={!selectedReason || saving}
+              disabled={!rejectReason.trim() || saving}
               className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
-                selectedReason && !saving
+                rejectReason.trim() && !saving
                   ? 'bg-red-600 text-white hover:bg-red-700'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
             >
-              Confirm reject
+              Confirm rejection
             </button>
             <button
               onClick={handleCancel}
-              className="px-4 py-2.5 border border-gray-300 text-sm font-medium text-gray-500 rounded-lg hover:bg-gray-50 transition-colors"
+              className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
             >
               Cancel
             </button>
@@ -406,8 +385,7 @@ function computeAddedFields(field) {
 
 function ClaimCard({ field, onApprove, onReject, saving }) {
   const [showReject, setShowReject] = useState(false)
-  const [selectedReason, setSelectedReason] = useState(null)
-  const [customNote, setCustomNote] = useState('')
+  const [rejectReason, setRejectReason] = useState('')
 
   const claimant = field.users
   const claimantLabel = claimant
@@ -417,13 +395,12 @@ function ClaimCard({ field, onApprove, onReject, saving }) {
 
   function handleRejectClick() {
     if (!showReject) { setShowReject(true); return }
-    if (selectedReason) onReject(field.id, selectedReason, customNote)
+    if (rejectReason.trim()) onReject(field.id, rejectReason.trim(), field.name)
   }
 
   function handleCancel() {
     setShowReject(false)
-    setSelectedReason(null)
-    setCustomNote('')
+    setRejectReason('')
   }
 
   return (
@@ -446,28 +423,13 @@ function ClaimCard({ field, onApprove, onReject, saving }) {
 
       {showReject && (
         <div className="px-5 pb-4 pt-3">
-          <p className="text-xs font-semibold text-gray-600 mb-2">Send rejection reason to claimant</p>
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            {REJECTION_REASONS.map((reason) => (
-              <button
-                key={reason}
-                onClick={() => setSelectedReason(reason)}
-                className={`px-3 py-2 rounded-lg border text-xs font-medium text-left transition-colors ${
-                  selectedReason === reason
-                    ? 'bg-red-50 border-red-400 text-red-700'
-                    : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
-                }`}
-              >
-                {reason}
-              </button>
-            ))}
-          </div>
-          <input
-            type="text"
-            value={customNote}
-            onChange={(e) => setCustomNote(e.target.value)}
-            placeholder="Optional: add a note for the claimant"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 text-gray-600"
+          <label className="block text-xs font-semibold text-gray-600 mb-1.5">Reason for rejection</label>
+          <textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Tell the owner why their listing wasn't approved and what they need to fix..."
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 text-gray-700 resize-none"
           />
         </div>
       )}
@@ -494,18 +456,18 @@ function ClaimCard({ field, onApprove, onReject, saving }) {
           <>
             <button
               onClick={handleRejectClick}
-              disabled={!selectedReason || saving}
+              disabled={!rejectReason.trim() || saving}
               className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
-                selectedReason && !saving
+                rejectReason.trim() && !saving
                   ? 'bg-red-600 text-white hover:bg-red-700'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
             >
-              Confirm reject
+              Confirm rejection
             </button>
             <button
               onClick={handleCancel}
-              className="px-4 py-2.5 border border-gray-300 text-sm font-medium text-gray-500 rounded-lg hover:bg-gray-50 transition-colors"
+              className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
             >
               Cancel
             </button>
@@ -578,13 +540,12 @@ export default function AdminDashboard() {
     setSaving(false)
   }
 
-  async function handleReject(id, selectedReason, customNote) {
+  async function handleReject(id, rejection_reason, fieldName) {
     setSaving(true)
-    const rejection_reason = selectedReason + (customNote?.trim() ? ` — ${customNote.trim()}` : '')
     const { error } = await supabase.from('fields').update({ listing_status: 'rejected', rejection_reason }).eq('id', id)
     if (error) { setError(error.message) } else {
       setPendingFields((prev) => prev.filter((f) => f.id !== id))
-      showToast('Listing rejected')
+      showToast(`${fieldName} has been rejected.`)
     }
     setSaving(false)
   }
@@ -647,9 +608,8 @@ export default function AdminDashboard() {
     setSaving(false)
   }
 
-  async function handleRejectClaim(id, selectedReason, customNote) {
+  async function handleRejectClaim(id, rejection_reason, fieldName) {
     setSaving(true)
-    const rejection_reason = selectedReason + (customNote?.trim() ? ` — ${customNote.trim()}` : '')
     const { error } = await supabase.from('fields').update({
       listing_status: 'rejected',
       rejection_reason,
@@ -658,7 +618,7 @@ export default function AdminDashboard() {
     }).eq('id', id)
     if (error) { setError(error.message) } else {
       setPendingClaims((prev) => prev.filter((f) => f.id !== id))
-      showToast('Claim rejected')
+      showToast(`${fieldName} has been rejected.`)
     }
     setSaving(false)
   }
