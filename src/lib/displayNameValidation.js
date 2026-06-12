@@ -19,7 +19,8 @@ export function validateDisplayName(value) {
     return 'This display name isn\'t allowed. Please choose something appropriate.'
   }
 
-  if (profanityFilter.isProfane(v)) {
+  // Replace underscores and hyphens with spaces so "shit_player" is caught
+  if (profanityFilter.isProfane(v.replace(/[_-]/g, ' '))) {
     return 'This display name isn\'t allowed. Please choose something appropriate.'
   }
 

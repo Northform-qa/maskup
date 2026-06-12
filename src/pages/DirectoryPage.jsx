@@ -408,6 +408,7 @@ export default function DirectoryPage() {
           selectedId={selectedId}
           onSelectPin={(id) => setSelectedId(id === selectedId ? null : id)}
           flyTarget={flyTarget}
+          activeFilter={activeFilter}
           className="flex-1"
         />
 

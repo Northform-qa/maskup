@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Map, Marker, NavigationControl } from 'react-map-gl/mapbox'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import { fieldMatchesFilter } from '../lib/fieldUtils'
 
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const ONTARIO = { longitude: -79.5, latitude: 44.0, zoom: 7 }
 const MAX_BOUNDS = [[-95.15, 41.6], [-74.3, 56.9]]
 const FIELD_ZOOM = 13
 
-export default function MapboxMap({ fields = [], selectedId, onSelectPin, flyTarget, className = '' }) {
+export default function MapboxMap({ fields = [], selectedId, onSelectPin, flyTarget, activeFilter = 'All', className = '' }) {
   const mapRef = useRef(null)
   const onSelectPinRef = useRef(onSelectPin)
   const [userLocation, setUserLocation] = useState(null)
@@ -63,6 +64,7 @@ export default function MapboxMap({ fields = [], selectedId, onSelectPin, flyTar
         {fields.map((field) => {
           if (field.lat == null || field.lng == null) return null
           const isSelected = field.id === selectedId
+          const matches = fieldMatchesFilter(field, activeFilter)
           return (
             <Marker
               key={field.id}
@@ -75,10 +77,15 @@ export default function MapboxMap({ fields = [], selectedId, onSelectPin, flyTar
               }}
             >
               <div
+                style={{ opacity: matches ? 1 : 0.35 }}
                 className={`rounded-full border-white shadow-md cursor-pointer transition-all duration-150 ${
                   isSelected
-                    ? 'w-5 h-5 bg-[#2a4d0c] border-[3px]'
-                    : 'w-3.5 h-3.5 bg-[#3B6D11] border-2'
+                    ? 'w-5 h-5 border-[3px]'
+                    : 'w-3.5 h-3.5 border-2'
+                } ${
+                  matches
+                    ? isSelected ? 'bg-[#2a4d0c]' : 'bg-[#3B6D11]'
+                    : 'bg-gray-500'
                 }`}
               />
             </Marker>

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { formatTime, formatDisplayDate, getTodayHours, normalizeEvent, normalizeField } from './fieldUtils'
+import { formatTime, formatDisplayDate, getTodayHours, normalizeEvent, normalizeField, fieldMatchesFilter } from './fieldUtils'
 
 // Pin to a known Monday so getTodayHours always reads the 'Mon' key
 const MOCK_MONDAY = new Date('2026-06-15T12:00:00').getTime()
@@ -213,5 +213,47 @@ describe('normalizeField', () => {
     const result = normalizeField({ ...base, city: 'Toronto', rating: 4.7 })
     expect(result.city).toBe('Toronto')
     expect(result.rating).toBe(4.7)
+  })
+})
+
+// ─── fieldMatchesFilter ───────────────────────────────────────
+
+describe('fieldMatchesFilter', () => {
+  const field = { field_types: ['Woodsball', 'Speedball'] }
+
+  it('returns true when activeFilter is "All"', () => {
+    expect(fieldMatchesFilter(field, 'All')).toBe(true)
+  })
+
+  it('returns true when activeFilter is null', () => {
+    expect(fieldMatchesFilter(field, null)).toBe(true)
+  })
+
+  it('returns true when activeFilter is undefined', () => {
+    expect(fieldMatchesFilter(field, undefined)).toBe(true)
+  })
+
+  it('returns true when field includes the active filter type', () => {
+    expect(fieldMatchesFilter(field, 'Woodsball')).toBe(true)
+  })
+
+  it('returns true for a second matching type', () => {
+    expect(fieldMatchesFilter(field, 'Speedball')).toBe(true)
+  })
+
+  it('returns false when field does not include the active filter type', () => {
+    expect(fieldMatchesFilter(field, 'Airsoft')).toBe(false)
+  })
+
+  it('returns false when field has no matching types', () => {
+    expect(fieldMatchesFilter({ field_types: ['Indoor'] }, 'Woodsball')).toBe(false)
+  })
+
+  it('returns true when field_types is null/undefined (no crash)', () => {
+    expect(fieldMatchesFilter({ field_types: null }, 'All')).toBe(true)
+  })
+
+  it('returns false gracefully when field_types is null and a filter is active', () => {
+    expect(fieldMatchesFilter({ field_types: null }, 'Woodsball')).toBe(false)
   })
 })

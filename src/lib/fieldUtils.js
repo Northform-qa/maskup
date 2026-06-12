@@ -46,6 +46,13 @@ export function normalizeEvent(e) {
   }
 }
 
+// Returns true if the field matches the active filter chip.
+// 'All' or null/undefined → always matches.
+export function fieldMatchesFilter(field, activeFilter) {
+  if (!activeFilter || activeFilter === 'All') return true
+  return field.field_types?.includes(activeFilter) ?? false
+}
+
 export function normalizeField(f) {
   return {
     ...f,
