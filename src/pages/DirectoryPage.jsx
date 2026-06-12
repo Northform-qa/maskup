@@ -10,6 +10,7 @@ import shieldIcon from '../assets/logos/green/Shield Icon Only.svg'
 import HeroPhoto from '../components/HeroPhoto'
 import WeatherChip from '../components/WeatherChip'
 import { supabase } from '../lib/supabase'
+import { getTodayHours } from '../lib/fieldUtils'
 import { normalizeField } from '../lib/fieldUtils'
 import { FILTER_CHIPS } from '../data/mockData'
 
@@ -367,9 +368,6 @@ export default function DirectoryPage() {
                       {/* Status + weather */}
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <StatusBadge status={field.weather_status} />
-                        {!field.claimed && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">Unclaimed</span>
-                        )}
                         {field.today_hours && (
                           <span className="text-xs text-gray-400">🕐 {field.today_hours}</span>
                         )}
@@ -446,9 +444,6 @@ export default function DirectoryPage() {
                 {/* Status badges */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   <StatusBadge status={selectedField.weather_status} />
-                  {!selectedField.claimed && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">Unclaimed</span>
-                  )}
                   {selectedField.today_hours && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
                       🕐 {selectedField.today_hours} today
@@ -462,17 +457,29 @@ export default function DirectoryPage() {
                   <WeatherChip field={selectedField} className="ml-auto" />
                 </div>
 
-                {/* Stat row — omit Pricing/Rentals for unclaimed if data missing */}
+                {/* Stat row */}
                 <div className="flex gap-2 mb-4">
                   {[
-                    { icon: '⚡', label: 'FIELDS', value: selectedField.num_fields },
-                    { icon: '💰', label: 'PRICING', value: selectedField.pricing?.split(' ')[0] ?? '—', skip: !selectedField.claimed && !selectedField.pricing },
+                    {
+                      icon: '🕐',
+                      label: "TODAY'S HOURS",
+                      value: (() => {
+                        const hours = getTodayHours(selectedField.hours)
+                        if (hours) return hours
+                        const isIndoor = selectedField.field_types?.includes('Indoor')
+                        return isIndoor ? 'Open year-round' : 'Closed today'
+                      })(),
+                    },
+                    { icon: '💰', label: 'GENERAL PRICING', value: selectedField.pricing || null, muted: !selectedField.pricing },
                     { icon: '🎿', label: 'RENTALS', value: selectedField.rentals_available ? 'Yes' : 'No', skip: !selectedField.claimed },
                   ].filter((s) => !s.skip).map((stat) => (
                     <div key={stat.label} className="flex-1 border border-gray-200 rounded-lg p-2 flex flex-col items-center gap-0.5 text-center">
                       <span className="text-base">{stat.icon}</span>
                       <span className="text-[9px] text-gray-400 uppercase tracking-wide font-medium">{stat.label}</span>
-                      <span className="text-sm font-semibold text-gray-800 leading-tight">{stat.value}</span>
+                      {stat.muted
+                        ? <span className="text-xs text-gray-400 leading-tight">Contact field for pricing</span>
+                        : <span className="text-sm font-semibold text-gray-800 leading-tight">{stat.value}</span>
+                      }
                     </div>
                   ))}
                 </div>
@@ -490,7 +497,7 @@ export default function DirectoryPage() {
                 {/* Game types */}
                 {selectedField.field_types.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1.5">Game Types</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1.5">Field Types</p>
                     <div className="flex flex-wrap gap-1">
                       {selectedField.field_types.map((t) => (
                         <FieldTypeChip key={t} type={t} small />

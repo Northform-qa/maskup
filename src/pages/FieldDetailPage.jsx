@@ -366,10 +366,10 @@ export default function FieldDetailPage() {
           )}
         </div>
 
-        {/* ── 6. Game types ── */}
+        {/* ── 6. Field types ── */}
         {(field.field_types.length > 0 || !field.claimed) && (
           <div className="mb-5">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Game types</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Field types</h2>
             {field.field_types.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {field.field_types.map((t) => (
@@ -377,7 +377,7 @@ export default function FieldDetailPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-amber-700">Game types not listed yet — ask the staff at {field.name} to claim their listing</p>
+              <p className="text-sm text-amber-700">Field types not listed yet — ask the staff at {field.name} to claim their listing</p>
             )}
           </div>
         )}

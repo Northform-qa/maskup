@@ -1,10 +1,18 @@
 const DAY_KEYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export function getTodayHours(hours) {
-  const key = DAY_KEYS[new Date().getDay()]
+  const dayIndex = new Date().getDay() // 0 = Sun, 6 = Sat
+  const key = DAY_KEYS[dayIndex]
   const val = hours?.[key]
-  if (!val) return null
-  // String format (legacy seed data): 'Mon: "9am–5pm"' or '"Closed"'
+
+  if (!val) {
+    // Default: fields with no hours data at all are assumed open Sat/Sun 9am–5pm
+    const noHoursData = !hours || Object.keys(hours).length === 0
+    if (noHoursData && (dayIndex === 0 || dayIndex === 6)) return '9am–5pm'
+    return null
+  }
+
+  // String format (legacy seed data): '9am–5pm' or 'Closed'
   if (typeof val === 'string') return val !== 'Closed' ? val : null
   // Object format (form submissions): {open: '09:00', close: '17:00'} or {closed: true}
   if (val.closed) return null

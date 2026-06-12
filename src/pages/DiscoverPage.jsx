@@ -355,9 +355,6 @@ export default function DiscoverPage() {
                   {/* Status + hours + weather */}
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                     <StatusBadge status={field.weather_status} />
-                    {!field.claimed && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">Unclaimed</span>
-                    )}
                     {field.today_hours && (
                       <span className="text-xs text-gray-500">🕐 {field.today_hours} today</span>
                     )}

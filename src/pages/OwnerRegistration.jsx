@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import shieldIcon from '../assets/logos/green/Shield Icon Only.svg'
 
 // ── Claim path: unclaimed field search ───────────────────────────
 function ClaimSearchScreen({ onContinue, onBack }) {
@@ -105,34 +106,76 @@ function ClaimSearchScreen({ onContinue, onBack }) {
 // ── Step 0 path selector ──────────────────────────────────────────
 function PathSelectScreen({ onSelectNew, onSelectClaim }) {
   return (
-    <div className="min-h-screen bg-cream-100 py-12 px-4">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen bg-[#F5F2EB] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-2xl">
+
+        {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Let's get your field listed</h1>
-          <p className="text-sm text-gray-500">Choose how you'd like to proceed</p>
+          <img src={shieldIcon} alt="" className="w-14 h-14 mx-auto mb-5" />
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">List your field on MaskUp.gg</h1>
+          <p className="text-base text-gray-500 leading-relaxed">
+            Ontario's paintball and airsoft community is looking for you.
+          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* Option cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+
+          {/* New listing */}
           <button
             onClick={onSelectNew}
-            className="group bg-white border-2 border-gray-200 hover:border-brand rounded-2xl p-6 text-left transition-all hover:shadow-md"
+            className="group bg-white border border-gray-200 hover:border-brand hover:shadow-md rounded-xl p-6 sm:p-8 text-left transition-all cursor-pointer flex flex-col"
           >
-            <span className="text-4xl block mb-3">🏕️</span>
-            <h2 className="text-base font-bold text-gray-900 mb-1 group-hover:text-brand transition-colors">
-              Register a New Field
+            <div className="flex items-start justify-between mb-5">
+              <div className="w-10 h-10 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <svg className="w-5 h-5 text-gray-300 group-hover:text-brand transition-colors flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-brand transition-colors">
+              New Listing
             </h2>
-            <p className="text-sm text-gray-500">Your field isn't on MaskUp yet</p>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Your field isn't on MaskUp yet. Register it and get discovered by players across Ontario.
+            </p>
           </button>
+
+          {/* Claim listing */}
           <button
             onClick={onSelectClaim}
-            className="group bg-white border-2 border-gray-200 hover:border-amber-400 rounded-2xl p-6 text-left transition-all hover:shadow-md"
+            className="group bg-white border border-gray-200 hover:border-brand hover:shadow-md rounded-xl p-6 sm:p-8 text-left transition-all cursor-pointer flex flex-col"
           >
-            <span className="text-4xl block mb-3">🎯</span>
-            <h2 className="text-base font-bold text-gray-900 mb-1 group-hover:text-amber-600 transition-colors">
-              Claim an Existing Listing
+            <div className="flex items-start justify-between mb-5">
+              <div className="w-10 h-10 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <svg className="w-5 h-5 text-gray-300 group-hover:text-brand transition-colors flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-brand transition-colors">
+              Claim Your Field
             </h2>
-            <p className="text-sm text-gray-500">Your field is already on MaskUp but hasn't been claimed</p>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Your field is already listed on MaskUp. Claim it to manage your hours, status, and events.
+            </p>
           </button>
         </div>
+
+        {/* Footer link */}
+        <p className="text-sm text-gray-400 text-center">
+          Already listed your field?{' '}
+          <Link to="/login" className="text-brand font-medium hover:underline">
+            Sign in to your owner dashboard
+          </Link>
+        </p>
+
       </div>
     </div>
   )

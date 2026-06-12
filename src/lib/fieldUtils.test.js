@@ -72,8 +72,42 @@ describe('getTodayHours', () => {
     expect(getTodayHours(null)).toBeNull()
   })
 
-  it('returns null when today has no entry', () => {
+  it('returns null when today (Mon) has no entry in a populated hours object', () => {
+    expect(getTodayHours({ Tue: '10am–4pm' })).toBeNull()
+  })
+
+  it('returns null for empty hours object on a weekday', () => {
     expect(getTodayHours({})).toBeNull()
+  })
+
+  it('returns default 9am–5pm on Saturday when hours is null', () => {
+    vi.setSystemTime(new Date('2026-06-20T12:00:00').getTime()) // Saturday
+    expect(getTodayHours(null)).toBe('9am–5pm')
+  })
+
+  it('returns default 9am–5pm on Sunday when hours is null', () => {
+    vi.setSystemTime(new Date('2026-06-21T12:00:00').getTime()) // Sunday
+    expect(getTodayHours(null)).toBe('9am–5pm')
+  })
+
+  it('returns default 9am–5pm on Saturday when hours object is empty', () => {
+    vi.setSystemTime(new Date('2026-06-20T12:00:00').getTime()) // Saturday
+    expect(getTodayHours({})).toBe('9am–5pm')
+  })
+
+  it('does not apply default on Saturday when owner has explicitly set hours', () => {
+    vi.setSystemTime(new Date('2026-06-20T12:00:00').getTime()) // Saturday
+    expect(getTodayHours({ Sat: '10am–6pm' })).toBe('10am–6pm')
+  })
+
+  it('does not apply default on Saturday when owner has explicitly set Closed', () => {
+    vi.setSystemTime(new Date('2026-06-20T12:00:00').getTime()) // Saturday
+    expect(getTodayHours({ Sat: 'Closed' })).toBeNull()
+  })
+
+  it('returns null on a weekday with no hours data', () => {
+    vi.setSystemTime(new Date('2026-06-17T12:00:00').getTime()) // Wednesday
+    expect(getTodayHours(null)).toBeNull()
   })
 
   it('returns string value for legacy string format', () => {
