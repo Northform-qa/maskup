@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { sanitizeUrl } from '../lib/sanitizeUrl'
 
 const REJECTION_REASONS = [
   'Incomplete information',
@@ -100,7 +101,7 @@ function FieldInfoSection({ field }) {
           <div className="space-y-0.5">
             {field.phone && <p className="text-gray-700">📞 {field.phone}</p>}
             {field.website && (
-              <a href={field.website.startsWith('http') ? field.website : `https://${field.website}`} target="_blank" rel="noopener noreferrer" className="text-brand hover:underline block">
+              <a href={sanitizeUrl(field.website)} target="_blank" rel="noopener noreferrer" className="text-brand hover:underline block">
                 🌐 {field.website}
               </a>
             )}
