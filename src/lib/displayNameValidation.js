@@ -1,6 +1,6 @@
 import leoProfanity from 'leo-profanity'
 
-const BLOCKED_NAMES = ['admin', 'moderator', 'maskup', 'support', 'staff', 'official']
+const BLOCKED_NAMES = ['admin', 'moderator', 'maskup', 'support', 'staff', 'official', 'nazi', 'isis', 'jihad']
 
 // leo-profanity ships with a comprehensive dictionary including slurs —
 // the word list lives in node_modules, never in this repo.
@@ -15,6 +15,7 @@ export function validateDisplayName(value) {
   if (v.length > 30) return 'Display name must be 30 characters or fewer.'
   if (!/^[a-zA-Z0-9_-]+$/.test(v)) return 'Only letters, numbers, underscores, and hyphens are allowed.'
   if (/^\d+$/.test(v)) return 'Display name cannot be numbers only.'
+  if (/(.)\1{2,}/i.test(v)) return 'Display name cannot contain repeated characters (e.g. "aaa").'
 
   const lower = v.toLowerCase()
   if (BLOCKED_NAMES.some((b) => lower.includes(b))) {

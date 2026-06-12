@@ -25,7 +25,7 @@ describe('validateDisplayName', () => {
   })
 
   it('returns null for a name exactly 30 characters', () => {
-    expect(validateDisplayName('a'.repeat(30))).toBeNull()
+    expect(validateDisplayName('abcdefghij-abcdefghij-abcdefgh')).toBeNull()
   })
 
   // ── Rule 1: minimum 3 characters ─────────────────────────
@@ -70,6 +70,27 @@ describe('validateDisplayName', () => {
 
   it('accepts a name that starts with numbers but has letters', () => {
     expect(validateDisplayName('99player')).toBeNull()
+  })
+
+  // ── Rule 4b: repeated characters ─────────────────────────
+  it('rejects 3 or more of the same letter in a row', () => {
+    expect(validateDisplayName('KKK')).toBeTruthy()
+  })
+
+  it('rejects repeated characters in a longer name', () => {
+    expect(validateDisplayName('hhh_player')).toBeTruthy()
+  })
+
+  it('rejects repeated numbers', () => {
+    expect(validateDisplayName('player111')).toBeTruthy()
+  })
+
+  it('allows two of the same character in a row', () => {
+    expect(validateDisplayName('coolname')).toBeNull()
+  })
+
+  it('allows natural double letters like "bookkeeper"', () => {
+    expect(validateDisplayName('bookkeeper')).toBeNull()
   })
 
   // ── Rule 5: reserved words ────────────────────────────────

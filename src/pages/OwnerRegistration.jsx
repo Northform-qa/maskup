@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import shieldIcon from '../assets/logos/green/Shield Icon Only.svg'
 import { validateDisplayName } from '../lib/displayNameValidation'
+import { validateEmail, validatePassword, validatePhone, validatePricing, validateWebsite } from '../lib/formValidation'
 
 // ── Claim path: unclaimed field search ───────────────────────────
 function ClaimSearchScreen({ onContinue, onBack }) {
@@ -572,7 +573,7 @@ function Step3({ data, onChange }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Pricing (per session)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Average cost to play?</label>
         <input
           type="text"
           value={data.rental_pricing || ''}
@@ -717,6 +718,24 @@ export default function OwnerRegistration() {
   async function handleSubmit() {
     setError(null)
     setSubmitting(true)
+
+    const emailErr = validateEmail(formData.email)
+    if (emailErr) { setError(emailErr); setSubmitting(false); return }
+
+    const passwordErr = validatePassword(formData.password)
+    if (passwordErr) { setError(passwordErr); setSubmitting(false); return }
+
+    const ownerPhoneErr = validatePhone(formData.owner_phone)
+    if (ownerPhoneErr) { setError(`Your phone number: ${ownerPhoneErr}`); setSubmitting(false); return }
+
+    const fieldPhoneErr = validatePhone(formData.phone)
+    if (fieldPhoneErr) { setError(`Field phone number: ${fieldPhoneErr}`); setSubmitting(false); return }
+
+    const websiteErr = validateWebsite(formData.website)
+    if (websiteErr) { setError(websiteErr); setSubmitting(false); return }
+
+    const pricingErr = validatePricing(formData.rental_pricing)
+    if (pricingErr) { setError(`Pricing: ${pricingErr}`); setSubmitting(false); return }
 
     const nameErr = validateDisplayName(formData.display_name)
     if (nameErr) {

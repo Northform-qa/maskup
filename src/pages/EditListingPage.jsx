@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { validatePhone, validatePricing, validateWebsite, validatePositiveInt } from '../lib/formValidation'
 
 const FIELD_TYPES = ['Woodsball', 'Speedball', 'Scenario', 'Airsoft', 'Rec ball', 'Hyperball', 'Indoor', 'Tournament']
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -139,6 +140,21 @@ export default function EditListingPage() {
       return
     }
     if (form.field_types.length === 0) { setError('Select at least one field type.'); return }
+
+    const phoneErr = validatePhone(form.phone)
+    if (phoneErr) { setError(phoneErr); return }
+
+    const websiteErr = validateWebsite(form.website)
+    if (websiteErr) { setError(websiteErr); return }
+
+    const pricingErr = validatePricing(form.pricing)
+    if (pricingErr) { setError(`Session pricing: ${pricingErr}`); return }
+
+    const numFieldsErr = validatePositiveInt(form.num_fields, 'Number of fields')
+    if (numFieldsErr) { setError(numFieldsErr); return }
+
+    const capacityErr = validatePositiveInt(form.typical_capacity, 'Max group size')
+    if (capacityErr) { setError(capacityErr); return }
 
     setSaving(true)
 

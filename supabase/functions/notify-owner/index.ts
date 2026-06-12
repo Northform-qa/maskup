@@ -78,10 +78,21 @@ function rejectedEmail(fieldName: string, rejectionReason: string): { subject: s
   }
 }
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
 // ── Handler ───────────────────────────────────────────────────
 Deno.serve(async (req: Request) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: CORS_HEADERS })
+  }
+
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+    return new Response('Method not allowed', { status: 405, headers: CORS_HEADERS })
   }
 
   const resendKey = Deno.env.get('RESEND_API_KEY')
@@ -90,13 +101,13 @@ Deno.serve(async (req: Request) => {
 
   if (!resendKey || !supabaseUrl || !supabaseServiceKey) {
     console.error('notify-owner: missing required env vars')
-    return new Response('Server configuration error', { status: 500 })
+    return new Response('Server configuration error', { status: 500, headers: CORS_HEADERS })
   }
 
   // Verify the caller is an authenticated admin
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) {
-    return new Response('Unauthorized', { status: 401 })
+    return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS })
   }
 
   const callerClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
@@ -104,7 +115,7 @@ Deno.serve(async (req: Request) => {
   })
   const { data: { user } } = await callerClient.auth.getUser()
   if (!user) {
-    return new Response('Unauthorized', { status: 401 })
+    return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS })
   }
 
   const { data: callerProfile } = await callerClient
@@ -114,19 +125,19 @@ Deno.serve(async (req: Request) => {
     .single()
 
   if (callerProfile?.role !== 'admin') {
-    return new Response('Forbidden', { status: 403 })
+    return new Response('Forbidden', { status: 403, headers: CORS_HEADERS })
   }
 
   let body: { fieldId: string; action: 'approved' | 'rejected' }
   try {
     body = await req.json()
   } catch {
-    return new Response('Invalid JSON', { status: 400 })
+    return new Response('Invalid JSON', { status: 400, headers: CORS_HEADERS })
   }
 
   const { fieldId, action } = body
   if (!fieldId || !['approved', 'rejected'].includes(action)) {
-    return new Response('Invalid request body', { status: 400 })
+    return new Response('Invalid request body', { status: 400, headers: CORS_HEADERS })
   }
 
   // Fetch field + owner using service role (bypasses RLS)
@@ -139,7 +150,7 @@ Deno.serve(async (req: Request) => {
 
   if (fieldErr || !field) {
     console.error('notify-owner: field fetch failed', fieldErr)
-    return new Response('Field not found', { status: 404 })
+    return new Response('Field not found', { status: 404, headers: CORS_HEADERS })
   }
 
   const { data: owner, error: ownerErr } = await supabase
@@ -150,7 +161,7 @@ Deno.serve(async (req: Request) => {
 
   if (ownerErr || !owner) {
     console.error('notify-owner: owner fetch failed', ownerErr)
-    return new Response('Owner not found', { status: 404 })
+    return new Response('Owner not found', { status: 404, headers: CORS_HEADERS })
   }
 
   const template = action === 'approved'
@@ -174,11 +185,11 @@ Deno.serve(async (req: Request) => {
   if (!emailRes.ok) {
     const errText = await emailRes.text()
     console.error(`notify-owner: Resend error ${emailRes.status}`, errText)
-    return new Response('Email send failed', { status: 500 })
+    return new Response('Email send failed', { status: 500, headers: CORS_HEADERS })
   }
 
   console.log(`notify-owner: sent ${action} email for field ${fieldId} to ${owner.email}`)
   return new Response(JSON.stringify({ ok: true }), {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
   })
 })
