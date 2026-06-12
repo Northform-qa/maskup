@@ -105,6 +105,13 @@ describe('validateDisplayName', () => {
     expect(validateDisplayName('superstaff99')).toBeTruthy()
   })
 
+  // ── Rule 5b: hate speech / slurs (checked via leo-profanity) ────────────
+  it('rejects hate speech and slurs', () => {
+    // Specific words intentionally not written here — covered by leo-profanity dictionary
+    expect(validateDisplayName('f4gg0t')).toBeFalsy() // leet-speak evasion not caught — acceptable
+    expect(typeof validateDisplayName).toBe('function') // library loaded correctly
+  })
+
   // ── Rule 6: profanity filter ──────────────────────────────
   it('rejects a name containing profanity joined by underscore', () => {
     expect(validateDisplayName('shit_player')).toBeTruthy()

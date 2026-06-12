@@ -1,8 +1,10 @@
-import { Filter } from 'bad-words'
-
-const profanityFilter = new Filter()
+import leoProfanity from 'leo-profanity'
 
 const BLOCKED_NAMES = ['admin', 'moderator', 'maskup', 'support', 'staff', 'official']
+
+// leo-profanity ships with a comprehensive dictionary including slurs —
+// the word list lives in node_modules, never in this repo.
+leoProfanity.loadDictionary()
 
 export function validateDisplayName(value) {
   const v = value.trim()
@@ -19,8 +21,11 @@ export function validateDisplayName(value) {
     return 'This display name isn\'t allowed. Please choose something appropriate.'
   }
 
-  // Replace underscores and hyphens with spaces so "shit_player" is caught
-  if (profanityFilter.isProfane(v.replace(/[_-]/g, ' '))) {
+  // Check three forms: original, spaces-substituted (catches shit_player),
+  // and fully stripped (catches n_i_g_g_e_r style evasion)
+  const withSpaces = v.replace(/[_-]/g, ' ')
+  const stripped = v.replace(/[_-]/g, '')
+  if (leoProfanity.check(v) || leoProfanity.check(withSpaces) || leoProfanity.check(stripped)) {
     return 'This display name isn\'t allowed. Please choose something appropriate.'
   }
 

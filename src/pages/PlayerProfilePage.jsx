@@ -186,7 +186,7 @@ function DisplayNameEditor({ userId, currentName, onSaved }) {
       <input
         type="text"
         value={value}
-        onChange={(e) => { setValue(e.target.value); setError(null) }}
+        onChange={(e) => { setValue(e.target.value); setError(validateDisplayName(e.target.value)) }}
         autoFocus
         className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand ${error ? 'border-red-400' : 'border-gray-300'}`}
       />
