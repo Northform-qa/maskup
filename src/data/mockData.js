@@ -338,7 +338,7 @@ export const PENDING_FIELDS = [
   },
 ]
 
-export const FILTER_CHIPS = ['All', 'Woodball', 'Speedball', 'Scenario', 'Airsoft', 'Hyperball', 'Indoor']
+export const FILTER_CHIPS = ['All', 'Woodball', 'Speedball', 'Scenario', 'Airsoft', 'Hyperball', 'Indoor', 'Low Impact']
 
 export const MOCK_OWNER_DASHBOARD = {
   display_name: 'CZ',

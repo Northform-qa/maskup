@@ -7,6 +7,7 @@ const COLOR_MAP = {
   Airsoft: 'bg-teal-100 text-teal-800',
   'Big games': 'bg-red-100 text-red-700',
   'Private bookings': 'bg-indigo-100 text-indigo-700',
+  'Low Impact': 'bg-purple-100 text-purple-800',
 }
 
 export default function FieldTypeChip({ type, small = false }) {

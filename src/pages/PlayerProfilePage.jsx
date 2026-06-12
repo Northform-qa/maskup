@@ -211,7 +211,7 @@ function DisplayNameEditor({ userId, currentName, onSaved }) {
 }
 
 // ── State B — Player ──────────────────────────────────────────
-function StatePlayer({ user, profile, signOut }) {
+function StatePlayer({ user, profile, signOut, extraTopContent = null }) {
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '')
   const [rsvpCount, setRsvpCount] = useState(0)
   const [todayRsvp, setTodayRsvp] = useState(null)
@@ -248,8 +248,10 @@ function StatePlayer({ user, profile, signOut }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F2EB] px-4 py-10">
+    <div className="min-h-screen md:h-screen md:overflow-y-auto bg-[#F5F2EB] px-4 py-10">
       <div className="w-full max-w-lg mx-auto space-y-4">
+
+        {extraTopContent}
 
         {/* Avatar + name */}
         <div className="text-center mb-2">
@@ -318,7 +320,7 @@ function StatePlayer({ user, profile, signOut }) {
         </Card>
 
         {/* Footer links */}
-        <div className="flex items-center justify-center gap-4 pt-2 pb-20">
+        <div className="flex items-center justify-center gap-4 pt-2 pb-20 md:pb-4">
           <Link to="/privacy" className="text-xs text-gray-400 hover:underline">Privacy Policy</Link>
           <Link to="/terms" className="text-xs text-gray-400 hover:underline">Terms of Use</Link>
         </div>
@@ -346,79 +348,63 @@ function StateOwner({ user, profile, signOut }) {
     load()
   }, [user.id])
 
-  return (
-    <div className="min-h-screen bg-[#F5F2EB] px-4 py-10">
-      <div className="w-full max-w-lg mx-auto space-y-4">
-
-        {/* Field status card */}
-        {!fieldLoading && field && (
-          <Card className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand text-white">Field Owner</span>
-              <p className="text-sm font-bold text-gray-900 truncate">{field.name}</p>
-            </div>
-            <div className="flex items-center gap-2 mb-2">
-              <StatusBadge status={
-                field.listing_status === 'published' ? 'open'
-                : field.listing_status === 'pending' ? 'rain_delay'
-                : 'closed'
-              } />
-              <p className="text-sm text-gray-600">
-                {field.listing_status === 'published' && 'Your field is live and visible to players.'}
-                {field.listing_status === 'pending' && 'Your listing is under review. Our team will be in touch within 48 hours.'}
-                {field.listing_status === 'rejected' && 'Your listing was not approved.'}
-              </p>
-            </div>
-            {field.listing_status === 'rejected' && field.rejection_reason && (
-              <p className="text-xs text-red-500 mb-2">{field.rejection_reason}</p>
-            )}
-            {field.listing_status === 'published' ? (
-              <Link
-                to="/owner-dashboard"
-                className="mt-2 block w-full h-10 bg-brand text-white text-sm font-bold rounded-lg hover:bg-brand-dark transition-colors flex items-center justify-center"
-              >
-                Go to Owner Dashboard
-              </Link>
-            ) : (
-              <div className="flex items-center gap-3 mt-2">
-                {field.listing_status === 'rejected' && (
-                  <Link to="/register" className="text-sm text-brand font-medium hover:underline">Edit listing</Link>
-                )}
-                <a href="mailto:support@maskup.gg" className="text-sm text-gray-500 hover:underline">Contact support</a>
-              </div>
-            )}
-          </Card>
-        )}
-
-        {/* Rest is same as player */}
-        <StatePlayer user={user} profile={profile} signOut={signOut} />
+  const ownerCard = !fieldLoading && field ? (
+    <Card className="p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand text-white">Field Owner</span>
+        <p className="text-sm font-bold text-gray-900 truncate">{field.name}</p>
       </div>
-    </div>
-  )
+      <div className="flex items-center gap-2 mb-2">
+        <StatusBadge status={
+          field.listing_status === 'published' ? 'open'
+          : field.listing_status === 'pending' ? 'rain_delay'
+          : 'closed'
+        } />
+        <p className="text-sm text-gray-600">
+          {field.listing_status === 'published' && 'Your field is live and visible to players.'}
+          {field.listing_status === 'pending' && 'Your listing is under review. Our team will be in touch within 48 hours.'}
+          {field.listing_status === 'rejected' && 'Your listing was not approved.'}
+        </p>
+      </div>
+      {field.listing_status === 'rejected' && field.rejection_reason && (
+        <p className="text-xs text-red-500 mb-2">{field.rejection_reason}</p>
+      )}
+      {field.listing_status === 'published' ? (
+        <Link
+          to="/owner-dashboard"
+          className="mt-2 block w-full h-10 bg-brand text-white text-sm font-bold rounded-lg hover:bg-brand-dark transition-colors flex items-center justify-center"
+        >
+          Go to Owner Dashboard
+        </Link>
+      ) : (
+        <div className="flex items-center gap-3 mt-2">
+          {field.listing_status === 'rejected' && (
+            <Link to="/register" className="text-sm text-brand font-medium hover:underline">Edit listing</Link>
+          )}
+          <a href="mailto:support@maskup.gg" className="text-sm text-gray-500 hover:underline">Contact support</a>
+        </div>
+      )}
+    </Card>
+  ) : null
+
+  return <StatePlayer user={user} profile={profile} signOut={signOut} extraTopContent={ownerCard} />
 }
 
 // ── State D — Admin ───────────────────────────────────────────
 function StateAdmin({ user, profile, signOut }) {
-  return (
-    <div className="min-h-screen bg-[#F5F2EB] px-4 py-10">
-      <div className="w-full max-w-lg mx-auto space-y-4">
-
-        {/* Admin badge + dashboard link */}
-        <Card className="p-4 text-center">
-          <span className="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-brand text-white mb-3">Admin</span>
-          <Link
-            to="/admin"
-            className="block w-full h-10 bg-brand text-white text-sm font-bold rounded-lg hover:bg-brand-dark transition-colors flex items-center justify-center"
-          >
-            Go to Admin Dashboard
-          </Link>
-        </Card>
-
-        {/* Rest is same as player */}
-        <StatePlayer user={user} profile={profile} signOut={signOut} />
-      </div>
-    </div>
+  const adminCard = (
+    <Card className="p-4 text-center">
+      <span className="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-brand text-white mb-3">Admin</span>
+      <Link
+        to="/admin"
+        className="block w-full h-10 bg-brand text-white text-sm font-bold rounded-lg hover:bg-brand-dark transition-colors flex items-center justify-center"
+      >
+        Go to Admin Dashboard
+      </Link>
+    </Card>
   )
+
+  return <StatePlayer user={user} profile={profile} signOut={signOut} extraTopContent={adminCard} />
 }
 
 // ── Root component ────────────────────────────────────────────
