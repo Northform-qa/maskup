@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import shieldIcon from '../assets/logos/green/Shield Icon Only.svg'
+import { validateDisplayName } from '../lib/displayNameValidation'
 
 // ── Claim path: unclaimed field search ───────────────────────────
 function ClaimSearchScreen({ onContinue, onBack }) {
@@ -224,6 +225,8 @@ function StepIndicator({ current }) {
 }
 
 function Step1({ data, onChange }) {
+  const [displayNameError, setDisplayNameError] = useState(null)
+
   return (
     <div className="space-y-4">
       <div>
@@ -255,10 +258,14 @@ function Step1({ data, onChange }) {
         <input
           type="text"
           value={data.display_name}
-          onChange={(e) => onChange('display_name', e.target.value)}
+          onChange={(e) => {
+            onChange('display_name', e.target.value)
+            setDisplayNameError(validateDisplayName(e.target.value))
+          }}
           placeholder="Your name or field nickname"
-          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+          className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand ${displayNameError ? 'border-red-400' : 'border-gray-300'}`}
         />
+        {displayNameError && <p className="text-xs text-red-500 mt-1">{displayNameError}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -710,6 +717,13 @@ export default function OwnerRegistration() {
   async function handleSubmit() {
     setError(null)
     setSubmitting(true)
+
+    const nameErr = validateDisplayName(formData.display_name)
+    if (nameErr) {
+      setError(nameErr)
+      setSubmitting(false)
+      return
+    }
 
     if (formData.display_name.trim()) {
       const { data: taken } = await supabase.rpc('is_display_name_taken', { name: formData.display_name.trim() })
