@@ -528,6 +528,18 @@ export default function AdminDashboard() {
     load()
   }, [])
 
+  // Fire-and-forget — email failure never blocks the admin action
+  async function notifyOwner(fieldId, action) {
+    try {
+      const { error } = await supabase.functions.invoke('notify-owner', {
+        body: { fieldId, action },
+      })
+      if (error) console.error('notify-owner edge function error:', error)
+    } catch (err) {
+      console.error('notify-owner call failed:', err)
+    }
+  }
+
   async function handleApprove(id) {
     setSaving(true)
     const { error } = await supabase.from('fields').update({ listing_status: 'published' }).eq('id', id)
@@ -536,6 +548,7 @@ export default function AdminDashboard() {
       setPendingFields((prev) => prev.filter((f) => f.id !== id))
       if (field) setPublishedFields((prev) => [...prev, { ...field, listing_status: 'published' }].sort((a, b) => a.name.localeCompare(b.name)))
       showToast('Listing approved and now live')
+      notifyOwner(id, 'approved')
     }
     setSaving(false)
   }
@@ -546,6 +559,7 @@ export default function AdminDashboard() {
     if (error) { setError(error.message) } else {
       setPendingFields((prev) => prev.filter((f) => f.id !== id))
       showToast(`${fieldName} has been rejected.`)
+      notifyOwner(id, 'rejected')
     }
     setSaving(false)
   }
@@ -604,6 +618,7 @@ export default function AdminDashboard() {
     if (error) { setError(error.message) } else {
       setPendingClaims((prev) => prev.filter((f) => f.id !== id))
       showToast(`Claim approved — ${fieldName} is now live`)
+      notifyOwner(id, 'approved')
     }
     setSaving(false)
   }
@@ -619,6 +634,7 @@ export default function AdminDashboard() {
     if (error) { setError(error.message) } else {
       setPendingClaims((prev) => prev.filter((f) => f.id !== id))
       showToast(`${fieldName} has been rejected.`)
+      notifyOwner(id, 'rejected')
     }
     setSaving(false)
   }
