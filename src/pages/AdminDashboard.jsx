@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const REJECTION_REASONS = [
@@ -679,6 +680,9 @@ export default function AdminDashboard() {
 
         {/* Header */}
         <div className="mb-6">
+          <Link to="/profile" className="text-xs text-brand font-medium hover:underline flex items-center gap-1 mb-2">
+            ← My Profile
+          </Link>
           <p className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-1">Admin Dashboard</p>
           <h1 className="text-xl font-bold text-gray-900">Manage listings</h1>
         </div>
