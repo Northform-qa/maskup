@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import shieldIcon from '../assets/logos/green/Shield Icon Only.svg'
 import { validateDisplayName } from '../lib/displayNameValidation'
@@ -226,7 +226,10 @@ function StepIndicator({ current }) {
 }
 
 function Step1({ data, onChange }) {
+  const [emailError, setEmailError] = useState(null)
+  const [passwordError, setPasswordError] = useState(null)
   const [displayNameError, setDisplayNameError] = useState(null)
+  const [phoneError, setPhoneError] = useState(null)
 
   return (
     <div className="space-y-4">
@@ -237,10 +240,11 @@ function Step1({ data, onChange }) {
         <input
           type="email"
           value={data.email}
-          onChange={(e) => onChange('email', e.target.value)}
+          onChange={(e) => { onChange('email', e.target.value); setEmailError(validateEmail(e.target.value)) }}
           placeholder="you@yourfield.ca"
-          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+          className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand ${emailError ? 'border-red-400' : 'border-gray-300'}`}
         />
+        {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -249,20 +253,18 @@ function Step1({ data, onChange }) {
         <input
           type="password"
           value={data.password}
-          onChange={(e) => onChange('password', e.target.value)}
+          onChange={(e) => { onChange('password', e.target.value); setPasswordError(validatePassword(e.target.value)) }}
           placeholder="8+ characters"
-          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+          className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand ${passwordError ? 'border-red-400' : 'border-gray-300'}`}
         />
+        {passwordError && <p className="text-xs text-red-500 mt-1">{passwordError}</p>}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Display name</label>
         <input
           type="text"
           value={data.display_name}
-          onChange={(e) => {
-            onChange('display_name', e.target.value)
-            setDisplayNameError(validateDisplayName(e.target.value))
-          }}
+          onChange={(e) => { onChange('display_name', e.target.value); setDisplayNameError(validateDisplayName(e.target.value)) }}
           placeholder="Your name or field nickname"
           className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand ${displayNameError ? 'border-red-400' : 'border-gray-300'}`}
         />
@@ -303,11 +305,14 @@ function Step1({ data, onChange }) {
         <input
           type="tel"
           value={data.owner_phone}
-          onChange={(e) => onChange('owner_phone', e.target.value)}
+          onChange={(e) => { onChange('owner_phone', e.target.value); setPhoneError(validatePhone(e.target.value)) }}
           placeholder="(519) 555-0000"
-          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+          className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand ${phoneError ? 'border-red-400' : 'border-gray-300'}`}
         />
-        <p className="text-xs text-gray-400 mt-1">This is your contact number as the field owner — not your field's public phone number.</p>
+        {phoneError
+          ? <p className="text-xs text-red-500 mt-1">{phoneError}</p>
+          : <p className="text-xs text-gray-400 mt-1">This is your contact number as the field owner — not your field's public phone number.</p>
+        }
       </div>
 
       <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
@@ -668,7 +673,7 @@ async function geocodeAddress(address, city, province, postalCode) {
 }
 
 export default function OwnerRegistration() {
-  const navigate = useNavigate()
+
   const location = useLocation()
   const isClaim = new URLSearchParams(location.search).get('claim') === 'true'
   const [screen, setScreen] = useState(isClaim ? 'claim_search' : 'path_select')
@@ -882,6 +887,11 @@ export default function OwnerRegistration() {
         setError('Please enter a valid phone number (e.g. (519) 555-0000).')
         return
       }
+      const displayNameErr = validateDisplayName(formData.display_name)
+      if (displayNameErr) {
+        setError(displayNameErr)
+        return
+      }
     }
     if (step === 1) {
       const missing = []
@@ -1051,15 +1061,12 @@ export default function OwnerRegistration() {
               Your listing is under review. {formData.name || 'Your field'} has been submitted and is awaiting approval. You'll receive an email within 48 hours. Your field will not appear in search results until approved.
             </p>
             <div className="flex gap-3 mt-3">
-              <button
-                onClick={() => navigate('/')}
-                className="text-xs text-brand font-medium hover:underline"
-              >
-                Edit listing
-              </button>
-              <button className="text-xs text-gray-500 font-medium hover:underline">
+              <Link to="/profile" className="text-xs text-brand font-medium hover:underline">
+                View my field profile
+              </Link>
+              <a href="mailto:support@maskup.gg" className="text-xs text-gray-500 font-medium hover:underline">
                 Contact support
-              </button>
+              </a>
             </div>
           </div>
         )}
@@ -1070,7 +1077,7 @@ export default function OwnerRegistration() {
 
 function PostSubmitView({ field }) {
   return (
-    <div className="text-center py-8 space-y-3">
+    <div className="text-center py-8 space-y-4">
       <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
         <span className="text-3xl">✓</span>
       </div>
@@ -1078,6 +1085,12 @@ function PostSubmitView({ field }) {
       <p className="text-sm text-gray-500">
         We'll review <strong>{field.name || 'your field'}</strong> and send a confirmation to {field.email || 'your email'} within 48 hours.
       </p>
+      <Link
+        to="/profile"
+        className="inline-block mt-2 px-6 py-2.5 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-dark transition-colors"
+      >
+        Go to my field profile
+      </Link>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { validateDisplayName } from '../lib/displayNameValidation'
+import { validateEmail, validatePassword } from '../lib/formValidation'
 import compactLockup from '../assets/logos/green/Compact Horizontal Lockup.svg'
 
 function getPasswordStrength(pwd) {
@@ -26,7 +27,9 @@ export default function SignupPage() {
   const [displayNameError, setDisplayNameError] = useState(null)
   const [nameCheckStatus, setNameCheckStatus] = useState('idle') // idle | checking | available | taken
   const [email, setEmail] = useState('')
+  const [emailError, setEmailError] = useState(null)
   const [password, setPassword] = useState('')
+  const [passwordError, setPasswordError] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -153,11 +156,12 @@ export default function SignupPage() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setEmailError(validateEmail(e.target.value)) }}
               placeholder="you@example.com"
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
+              className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors ${emailError ? 'border-red-400' : 'border-gray-300'}`}
             />
+            {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
           </div>
 
           {/* Password */}
@@ -167,11 +171,11 @@ export default function SignupPage() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setPasswordError(validatePassword(e.target.value)) }}
                 placeholder="8+ characters"
                 required
                 minLength={8}
-                className="w-full px-4 py-3 pr-11 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
+                className={`w-full px-4 py-3 pr-11 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors ${passwordError ? 'border-red-400' : 'border-gray-300'}`}
               />
               <button
                 type="button"
@@ -192,6 +196,7 @@ export default function SignupPage() {
                 </p>
               </div>
             )}
+            {passwordError && <p className="text-xs text-red-500 mt-1">{passwordError}</p>}
           </div>
 
           {/* Error */}
@@ -204,7 +209,7 @@ export default function SignupPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading || !!displayNameError || nameCheckStatus === 'taken'}
+            disabled={loading || !!displayNameError || !!emailError || !!passwordError || nameCheckStatus === 'taken'}
             className="w-full h-11 bg-brand text-white text-sm font-bold rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {loading && (
