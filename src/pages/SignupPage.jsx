@@ -37,18 +37,16 @@ export default function SignupPage() {
     const val = e.target.value
     setDisplayName(val)
     setDisplayNameError(validateDisplayName(val))
-    setNameCheckStatus('idle')
+    setNameCheckStatus('idle') // reset in event handler, not in effect
   }
 
-  // Debounced availability check
+  // Debounced availability check — no synchronous setState in effect body
   useEffect(() => {
     const trimmed = displayName.trim()
-    if (!trimmed || displayNameError) {
-      setNameCheckStatus('idle')
-      return
-    }
-    setNameCheckStatus('checking')
+    if (!trimmed || displayNameError) return
+
     const timer = setTimeout(async () => {
+      setNameCheckStatus('checking')
       const { data: taken } = await supabase.rpc('is_display_name_taken', { name: trimmed })
       setNameCheckStatus(taken ? 'taken' : 'available')
     }, 500)
