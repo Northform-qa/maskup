@@ -302,6 +302,7 @@ export default function DiscoverPage() {
         selectedId={selectedId}
         onSelectPin={setSelectedId}
         flyTarget={flyTarget}
+        activeFilter={activeFilter}
         className="flex-shrink-0 h-[42vh]"
       />
 
