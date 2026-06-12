@@ -116,7 +116,7 @@ export default function DirectoryPage() {
           going_today_count: countByField[f.id] || 0,
         }))
         setFields(normalized)
-        if (normalized.length > 0) setSelectedId(normalized[0].id)
+        // no auto-selection on load
       }
       setLoading(false)
     }
@@ -194,7 +194,7 @@ export default function DirectoryPage() {
     setShowDropdown(false)
     setSearchActive(false)
     setSearchFields([])
-    setSelectedId(fields[0]?.id ?? null)
+    setSelectedId(null)
     setFlyTarget({ center: [-79.5, 44.0], zoom: 7 })
   }
 
@@ -211,7 +211,7 @@ export default function DirectoryPage() {
     if (showEventsWeekend && !f.events.some((e) => weekendDates.includes(e.date))) return false
     return true
   })
-  const selectedField = displayed.find((f) => f.id === selectedId) ?? displayed[0]
+  const selectedField = displayed.find((f) => f.id === selectedId) ?? null
 
   return (
     <div className="hidden md:flex flex-col h-full bg-cream-100">
@@ -336,7 +336,7 @@ export default function DirectoryPage() {
               return (
                 <button
                   key={field.id}
-                  onClick={() => setSelectedId(field.id)}
+                  onClick={() => setSelectedId(field.id === selectedId ? null : field.id)}
                   className={`w-full text-left pl-0 pr-3 py-3 transition-colors border-l-4 ${
                     active
                       ? 'bg-green-100 border-brand'
@@ -406,12 +406,18 @@ export default function DirectoryPage() {
         <MapboxMap
           fields={fields}
           selectedId={selectedId}
-          onSelectPin={setSelectedId}
+          onSelectPin={(id) => setSelectedId(id === selectedId ? null : id)}
           flyTarget={flyTarget}
           className="flex-1"
         />
 
         {/* ── Right: preview panel ── */}
+        {!selectedField && (
+          <div className="w-72 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col items-center justify-center gap-3">
+            <img src={shieldIcon} alt="" className="w-16 h-16 opacity-40" />
+            <p className="text-sm text-gray-400">Select a field to see details</p>
+          </div>
+        )}
         {selectedField && (
           <div className="w-72 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col">
 
