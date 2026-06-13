@@ -6,7 +6,7 @@ import compactLockup from '../assets/logos/green/Full Horizontal Lockup.svg'
 const NAV_LINKS = [
   { to: '/', label: 'Discover' },
   { to: '/events', label: 'Events' },
-  { to: '/owners', label: 'Owners' },
+  { to: '/owners', label: 'List Your Field' },
   { to: '/about', label: 'About' },
 ]
 

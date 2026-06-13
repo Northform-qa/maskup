@@ -41,7 +41,7 @@ export default function MobileNav() {
         }`}
       >
         <span className="text-lg leading-none">👤</span>
-        <span>You</span>
+        <span>Me</span>
       </Link>
     </nav>
     </>

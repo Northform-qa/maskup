@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useFavourites } from '../lib/useFavourites'
 import MapboxMap from '../components/MapboxMap'
@@ -34,8 +34,9 @@ function distanceSq(field, { lat, lng }) {
 }
 
 export default function DiscoverPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { favourites, toggleFavourite } = useFavourites(user)
+  const [bannerDismissed, setBannerDismissed] = useState(false)
 
   const [activeFilter, setActiveFilter] = useState('All')
   const [selectedId, setSelectedId] = useState(null)
@@ -390,6 +391,27 @@ export default function DiscoverPage() {
                 </div>
               </button>
             ))}
+          </div>
+        )}
+
+        {!bannerDismissed && profile?.role !== 'owner' && profile?.role !== 'admin' && (
+          <div className="md:hidden mx-4 mt-3 mb-2 bg-cream-100 border border-gray-200 rounded-xl p-4 relative">
+            <button
+              onClick={() => setBannerDismissed(true)}
+              aria-label="Dismiss"
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors leading-none"
+            >
+              ✕
+            </button>
+            <div className="flex items-center gap-3 pr-6">
+              <img src={shieldIcon} alt="" className="w-8 h-8 flex-shrink-0 opacity-70" />
+              <div>
+                <p className="text-sm font-medium text-gray-700 leading-snug">Own a field? List it free on MaskUp.</p>
+                <Link to="/register" className="text-xs text-brand font-semibold hover:underline">
+                  Get listed →
+                </Link>
+              </div>
+            </div>
           </div>
         )}
 
