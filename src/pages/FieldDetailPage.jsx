@@ -5,7 +5,7 @@ import FieldTypeChip from '../components/FieldTypeChip'
 import HeroPhoto from '../components/HeroPhoto'
 import ActivePlayers from '../components/ActivePlayers'
 import { supabase } from '../lib/supabase'
-import { normalizeField, formatTime } from '../lib/fieldUtils'
+import { normalizeField, formatTime, getFieldStatus } from '../lib/fieldUtils'
 import { useAuth } from '../context/AuthContext'
 import WeatherChip from '../components/WeatherChip'
 
@@ -170,7 +170,7 @@ export default function FieldDetailPage() {
 
       {/* ── 1 + 2. Hero photo with top bar overlaid ── */}
       <div className="relative">
-        <HeroPhoto className="h-64 w-full" label="HERO PHOTO · FIELD" />
+        <HeroPhoto className="h-64 w-full" field={field} currentUser={user} />
 
         <div className="absolute top-0 left-0 right-0 pt-12 px-4 flex items-center justify-between">
           <button
@@ -231,7 +231,7 @@ export default function FieldDetailPage() {
         )}
 
         <div className="flex flex-wrap gap-1.5 mb-5">
-          <StatusBadge status={field.weather_status} />
+          <StatusBadge status={getFieldStatus(field)} />
           {field.today_hours && (
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
               🕐 {field.today_hours}
@@ -282,7 +282,7 @@ export default function FieldDetailPage() {
         <div className="flex gap-2 mb-5">
           {[
             { icon: '⚡', label: 'FIELDS', value: field.num_fields },
-            { icon: '💰', label: 'PRICING', value: field.pricing?.split('–')[0]?.trim() ?? '—', skip: !field.claimed && !field.pricing },
+            { icon: '💰', label: 'PRICING', value: field.pricing?.split('–')[0]?.trim(), skip: !field.pricing },
             { icon: '🎿', label: 'RENTALS', value: field.rentals_available ? 'Yes' : 'No', skip: !field.claimed },
           ].filter((s) => !s.skip).map((stat) => (
             <div key={stat.label} className="flex-1 border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-1">
@@ -483,7 +483,7 @@ export default function FieldDetailPage() {
           {field.rentals_available ? (
             <div className="flex items-start gap-2">
               <span className="text-brand text-sm mt-0.5 flex-shrink-0">✓</span>
-              <p className="text-sm text-gray-600">{field.rental_pricing}</p>
+              {field.rental_pricing && <p className="text-sm text-gray-600">{field.rental_pricing}</p>}
             </div>
           ) : !field.claimed ? (
             <p className="text-sm text-amber-700">Rental info not available yet — ask {field.name} about claiming their free MaskUp.gg listing</p>

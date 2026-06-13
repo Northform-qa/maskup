@@ -10,7 +10,7 @@ import shieldIcon from '../assets/logos/green/Shield Icon Only.svg'
 import HeroPhoto from '../components/HeroPhoto'
 import WeatherChip from '../components/WeatherChip'
 import { supabase } from '../lib/supabase'
-import { normalizeField } from '../lib/fieldUtils'
+import { normalizeField, getFieldStatus } from '../lib/fieldUtils'
 import { FILTER_CHIPS } from '../data/mockData'
 
 const POSTAL_RE = /^[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d$/
@@ -331,7 +331,7 @@ export default function DiscoverPage() {
                 onClick={() => navigate(`/field/${field.id}`)}
                 className="w-full text-left flex gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
               >
-                <HeroPhoto className="w-16 h-16 flex-shrink-0 rounded-lg text-[8px]" label="FIELD" />
+                <HeroPhoto className="w-16 h-16 flex-shrink-0 rounded-lg" field={field} currentUser={user} compact />
 
                 <div className="flex-1 min-w-0">
                   {/* Name + fav */}
@@ -355,7 +355,7 @@ export default function DiscoverPage() {
 
                   {/* Status + hours + weather */}
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <StatusBadge status={field.weather_status} />
+                    <StatusBadge status={getFieldStatus(field)} />
                     {field.today_hours && (
                       <span className="text-xs text-gray-500">🕐 {field.today_hours} today</span>
                     )}

@@ -1,5 +1,40 @@
 const DAY_KEYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+// nowMins defaults to current time; pass an explicit value in tests to avoid mocking Date.
+export function isOpenNow(hours, nowMins = new Date().getHours() * 60 + new Date().getMinutes()) {
+  const val = hours?.[DAY_KEYS[new Date().getDay()]]
+  if (!val || val.closed) return false
+  if (val.open && val.close) {
+    const [oh, om] = val.open.split(':').map(Number)
+    const [ch, cm] = val.close.split(':').map(Number)
+    return nowMins >= oh * 60 + om && nowMins < ch * 60 + cm
+  }
+  // Legacy string format: '9am–5pm'
+  if (typeof val === 'string' && val !== 'Closed') {
+    const match = val.match(/(\d+)(?::(\d+))?(am|pm)[–-](\d+)(?::(\d+))?(am|pm)/i)
+    if (!match) return false
+    let [, oh, om = '0', op, ch, cm = '0', cp] = match
+    oh = parseInt(oh); om = parseInt(om); ch = parseInt(ch); cm = parseInt(cm)
+    if (op.toLowerCase() === 'pm' && oh !== 12) oh += 12
+    if (op.toLowerCase() === 'am' && oh === 12) oh = 0
+    if (cp.toLowerCase() === 'pm' && ch !== 12) ch += 12
+    if (cp.toLowerCase() === 'am' && ch === 12) ch = 0
+    return nowMins >= oh * 60 + om && nowMins < ch * 60 + cm
+  }
+  return false
+}
+
+// Returns the effective status to display for a field.
+// weather_status 'rain_delay' and 'closed' are owner overrides — always respected.
+// weather_status 'open' defers to actual hours: 'open' if within hours, null if outside or unknown.
+export function getFieldStatus(field, nowMins) {
+  const ws = field?.weather_status
+  if (ws === 'rain_delay' || ws === 'closed') return ws
+  const hasHours = field?.hours && Object.keys(field.hours).length > 0
+  if (!hasHours) return null
+  return isOpenNow(field.hours, nowMins) ? 'open' : null
+}
+
 export function getTodayHours(hours) {
   const dayIndex = new Date().getDay() // 0 = Sun, 6 = Sat
   const key = DAY_KEYS[dayIndex]

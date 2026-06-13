@@ -5,6 +5,8 @@ import {
   getTodayHours,
   normalizeEvent,
   normalizeField,
+  isOpenNow,
+  getFieldStatus,
 } from '../fieldUtils'
 
 // ── formatTime ──────────────────────────────────────────────────
@@ -136,5 +138,69 @@ describe('normalizeField', () => {
   it('handles null events gracefully', () => {
     const raw = { hours: {}, events: null }
     expect(normalizeField(raw).events).toEqual([])
+  })
+})
+
+// ── isOpenNow ────────────────────────────────────────────────────
+// Uses nowMins param to avoid mocking Date; day-of-week is live but
+// the object-format tests use explicit open/close so they always pass.
+describe('isOpenNow — object format hours', () => {
+  it('returns true when current time is within open/close', () => {
+    const hours = { [['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()]]: { open: '00:00', close: '23:59' } }
+    expect(isOpenNow(hours, 720)).toBe(true) // noon
+  })
+
+  it('returns false when current time is before opening', () => {
+    const hours = { [['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()]]: { open: '10:00', close: '18:00' } }
+    expect(isOpenNow(hours, 540)).toBe(false) // 9am
+  })
+
+  it('returns false when current time is after closing', () => {
+    const hours = { [['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()]]: { open: '09:00', close: '17:00' } }
+    expect(isOpenNow(hours, 1020)).toBe(false) // 5pm exactly — close is exclusive
+  })
+
+  it('returns false when day is marked closed', () => {
+    const hours = { [['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()]]: { closed: true } }
+    expect(isOpenNow(hours, 720)).toBe(false)
+  })
+
+  it('returns false when hours object is empty', () => {
+    expect(isOpenNow({}, 720)).toBe(false)
+  })
+
+  it('returns false when hours is null', () => {
+    expect(isOpenNow(null, 720)).toBe(false)
+  })
+})
+
+// ── getFieldStatus ───────────────────────────────────────────────
+describe('getFieldStatus', () => {
+  const todayKey = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()]
+  const openAllDay = { [todayKey]: { open: '00:00', close: '23:59' } }
+  const closedAllDay = { [todayKey]: { closed: true } }
+
+  it('returns rain_delay when weather_status is rain_delay regardless of hours', () => {
+    expect(getFieldStatus({ weather_status: 'rain_delay', hours: openAllDay }, 720)).toBe('rain_delay')
+  })
+
+  it('returns closed when weather_status is closed regardless of hours', () => {
+    expect(getFieldStatus({ weather_status: 'closed', hours: openAllDay }, 720)).toBe('closed')
+  })
+
+  it('returns open when weather_status is open and within hours', () => {
+    expect(getFieldStatus({ weather_status: 'open', hours: openAllDay }, 720)).toBe('open')
+  })
+
+  it('returns null when weather_status is open but outside hours', () => {
+    expect(getFieldStatus({ weather_status: 'open', hours: closedAllDay }, 720)).toBe(null)
+  })
+
+  it('returns null when weather_status is open and no hours data', () => {
+    expect(getFieldStatus({ weather_status: 'open', hours: {} }, 720)).toBe(null)
+  })
+
+  it('returns null when field is null', () => {
+    expect(getFieldStatus(null, 720)).toBe(null)
   })
 })

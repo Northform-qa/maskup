@@ -433,11 +433,11 @@ function ClaimCard({ field, onApprove, onReject, onRequestChanges, saving }) {
 
       {mode === 'changes' && (
         <div className="px-5 pb-4 pt-3">
-          <label className="block text-xs font-semibold text-amber-600 mb-1.5">What needs to be updated? — claimant can edit and resubmit</label>
+          <label className="block text-xs font-semibold text-amber-600 mb-1.5">Reason for declining — claimant will need to re-initiate their claim</label>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Tell the claimant exactly what needs to be fixed before their claim can be approved..."
+            placeholder="Tell the claimant what needs to be addressed before re-submitting their claim..."
             rows={3}
             className="w-full px-3 py-2 border border-amber-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 text-gray-700 resize-none"
           />
@@ -656,14 +656,13 @@ export default function AdminDashboard() {
   async function handleRejectClaim(id, rejection_reason, fieldName) {
     setSaving(true)
     const { error } = await supabase.from('fields').update({
-      listing_status: 'rejected',
       rejection_reason,
       claim_requested_by: null,
       claim_requested_at: null,
     }).eq('id', id)
     if (error) { setError(error.message) } else {
       setPendingClaims((prev) => prev.filter((f) => f.id !== id))
-      showToast(`${fieldName} has been rejected.`)
+      showToast(`Claim for ${fieldName} rejected.`)
       notifyOwner(id, 'rejected')
     }
     setSaving(false)
@@ -672,15 +671,14 @@ export default function AdminDashboard() {
   async function handleRequestClaimChanges(id, rejection_reason, fieldName) {
     setSaving(true)
     const { error } = await supabase.from('fields').update({
-      listing_status: 'requires_changes',
       rejection_reason,
       claim_requested_by: null,
       claim_requested_at: null,
     }).eq('id', id)
     if (error) { setError(error.message) } else {
       setPendingClaims((prev) => prev.filter((f) => f.id !== id))
-      showToast(`Changes requested for ${fieldName}.`)
-      notifyOwner(id, 'requires_changes')
+      showToast(`Claim for ${fieldName} declined — claimant notified to re-apply.`)
+      notifyOwner(id, 'rejected')
     }
     setSaving(false)
   }

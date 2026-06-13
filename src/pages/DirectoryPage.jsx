@@ -10,37 +10,10 @@ import shieldIcon from '../assets/logos/green/Shield Icon Only.svg'
 import HeroPhoto from '../components/HeroPhoto'
 import WeatherChip from '../components/WeatherChip'
 import { supabase } from '../lib/supabase'
-import { getTodayHours } from '../lib/fieldUtils'
-import { normalizeField } from '../lib/fieldUtils'
+import { getTodayHours, normalizeField, getFieldStatus } from '../lib/fieldUtils'
 import { FILTER_CHIPS } from '../data/mockData'
 
 const POSTAL_RE = /^[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d$/
-const DAY_KEYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-function isOpenNow(field) {
-  const val = field.hours?.[DAY_KEYS[new Date().getDay()]]
-  if (!val) return false
-  if (val.closed) return false
-  const now = new Date()
-  const nowMins = now.getHours() * 60 + now.getMinutes()
-  if (val.open && val.close) {
-    const [oh, om] = val.open.split(':').map(Number)
-    const [ch, cm] = val.close.split(':').map(Number)
-    return nowMins >= oh * 60 + om && nowMins < ch * 60 + cm
-  }
-  if (typeof val === 'string' && val !== 'Closed') {
-    const match = val.match(/(\d+)(?::(\d+))?(am|pm)[–-](\d+)(?::(\d+))?(am|pm)/i)
-    if (!match) return false
-    let [, oh, om = '0', op, ch, cm = '0', cp] = match
-    oh = parseInt(oh); om = parseInt(om); ch = parseInt(ch); cm = parseInt(cm)
-    if (op.toLowerCase() === 'pm' && oh !== 12) oh += 12
-    if (op.toLowerCase() === 'am' && oh === 12) oh = 0
-    if (cp.toLowerCase() === 'pm' && ch !== 12) ch += 12
-    if (cp.toLowerCase() === 'am' && ch === 12) ch = 0
-    return nowMins >= oh * 60 + om && nowMins < ch * 60 + cm
-  }
-  return false
-}
 
 function getWeekendDates() {
   const today = new Date()
@@ -206,7 +179,7 @@ export default function DirectoryPage() {
   const weekendDates = getWeekendDates()
   const baseList = searchActive ? searchFields : filtered
   const displayed = baseList.filter((f) => {
-    if (showOpenToday && !(f.weather_status === 'open' && isOpenNow(f))) return false
+    if (showOpenToday && getFieldStatus(f) !== 'open') return false
     if (showRentals && !f.rentals_available) return false
     if (showEventsWeekend && !f.events.some((e) => weekendDates.includes(e.date))) return false
     return true
@@ -344,7 +317,7 @@ export default function DirectoryPage() {
                   }`}
                 >
                   <div className="flex gap-2.5 pl-3">
-                    <HeroPhoto className="w-12 h-12 flex-shrink-0 rounded text-[7px]" label="" />
+                    <HeroPhoto className="w-12 h-12 flex-shrink-0 rounded" field={field} currentUser={user} compact />
                     <div className="flex-1 min-w-0">
                       {/* Name + fav */}
                       <div className="flex items-start justify-between gap-1">
@@ -367,7 +340,7 @@ export default function DirectoryPage() {
 
                       {/* Status + weather */}
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <StatusBadge status={field.weather_status} />
+                        <StatusBadge status={getFieldStatus(field)} />
                         {field.today_hours && (
                           <span className="text-xs text-gray-400">🕐 {field.today_hours}</span>
                         )}
@@ -424,7 +397,7 @@ export default function DirectoryPage() {
 
             {/* Scrollable content */}
             <div className="flex-1 min-h-0 overflow-y-auto">
-              <HeroPhoto className="h-40 w-full text-xs flex-shrink-0" label="HERO PHOTO" />
+              <HeroPhoto className="h-40 w-full flex-shrink-0" field={selectedField} currentUser={user} />
 
               <div className="p-4">
                 {/* Location */}
@@ -450,7 +423,7 @@ export default function DirectoryPage() {
 
                 {/* Status badges */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  <StatusBadge status={selectedField.weather_status} />
+                  <StatusBadge status={getFieldStatus(selectedField)} />
                   {selectedField.today_hours && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
                       🕐 {selectedField.today_hours} today
@@ -477,16 +450,13 @@ export default function DirectoryPage() {
                         return isIndoor ? 'Open year-round' : 'Closed today'
                       })(),
                     },
-                    { icon: '💰', label: 'GENERAL PRICING', value: selectedField.pricing || null, muted: !selectedField.pricing },
+                    { icon: '💰', label: 'GENERAL PRICING', value: selectedField.pricing, skip: !selectedField.pricing },
                     { icon: '🎿', label: 'RENTALS', value: selectedField.rentals_available ? 'Yes' : 'No', skip: !selectedField.claimed },
                   ].filter((s) => !s.skip).map((stat) => (
                     <div key={stat.label} className="flex-1 border border-gray-200 rounded-lg p-2 flex flex-col items-center gap-0.5 text-center">
                       <span className="text-base">{stat.icon}</span>
                       <span className="text-[9px] text-gray-400 uppercase tracking-wide font-medium">{stat.label}</span>
-                      {stat.muted
-                        ? <span className="text-xs text-gray-400 leading-tight">Contact field for pricing</span>
-                        : <span className="text-sm font-semibold text-gray-800 leading-tight">{stat.value}</span>
-                      }
+                      <span className="text-sm font-semibold text-gray-800 leading-tight">{stat.value}</span>
                     </div>
                   ))}
                 </div>
