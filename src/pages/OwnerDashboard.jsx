@@ -135,6 +135,28 @@ function ListingStatusBanner({ status, rejectionReason, fieldName }) {
     )
   }
 
+  if (status === 'requires_changes') {
+    return (
+      <div className="mb-5 bg-amber-50 border border-amber-300 rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <span className="text-amber-500 flex-shrink-0 mt-0.5 text-base">!</span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800">Updates needed before your listing can go live</p>
+            {rejectionReason && (
+              <p className="text-xs text-amber-700 mt-1 leading-relaxed">{rejectionReason}</p>
+            )}
+            <a
+              href="/owner-dashboard/edit"
+              className="inline-block mt-3 px-4 py-2 bg-amber-500 text-white text-xs font-semibold rounded-lg hover:bg-amber-600 transition-colors"
+            >
+              Edit &amp; resubmit
+            </a>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (status === 'rejected') {
     const subject = encodeURIComponent(`Listing Rejection - ${fieldName ?? 'My Field'}`)
     return (

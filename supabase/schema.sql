@@ -4,7 +4,7 @@
 -- Enums
 create type user_role as enum ('player', 'owner', 'admin');
 create type weather_status as enum ('open', 'rain_delay', 'closed');
-create type listing_status as enum ('pending', 'published', 'rejected');
+create type listing_status as enum ('pending', 'published', 'rejected', 'requires_changes');
 create type event_type as enum ('big_game', 'league', 'tournament', 'walk_on');
 create type player_count_range as enum ('under_25', '25_to_50', '50_to_100', 'over_100');
 

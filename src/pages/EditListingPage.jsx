@@ -47,6 +47,7 @@ export default function EditListingPage() {
   const navigate = useNavigate()
 
   const [fieldId, setFieldId] = useState(null)
+  const [fieldStatus, setFieldStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -89,6 +90,7 @@ export default function EditListingPage() {
         if (!data) { setError('No field found for your account.'); return }
 
         setFieldId(data.id)
+        setFieldStatus(data.listing_status)
         const addr = data.address ?? ''
         setOriginalAddress(`${addr}|${data.city}|${data.province}|${data.postal_code ?? ''}`)
         setForm({
@@ -166,6 +168,8 @@ export default function EditListingPage() {
       geoUpdate = { lat, lng }
     }
 
+    const isResubmit = fieldStatus === 'requires_changes'
+
     const { error } = await supabase
       .from('fields')
       .update({
@@ -187,15 +191,17 @@ export default function EditListingPage() {
         website: form.website || null,
         description: form.description || null,
         ...geoUpdate,
+        ...(isResubmit ? { listing_status: 'pending', rejection_reason: null } : {}),
       })
       .eq('id', fieldId)
 
     if (error) {
       setError(error.message)
     } else {
-      setSuccess(true)
+      if (isResubmit) setFieldStatus('pending')
+      setSuccess(isResubmit ? 'resubmit' : 'saved')
       setOriginalAddress(currentAddress)
-      setTimeout(() => setSuccess(false), 3000)
+      setTimeout(() => setSuccess(false), 4000)
     }
     setSaving(false)
   }
@@ -400,7 +406,9 @@ export default function EditListingPage() {
         )}
         {success && (
           <div className="px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700 font-medium">
-            ✓ Changes saved
+            {success === 'resubmit'
+              ? '✓ Listing resubmitted for review — we\'ll email you once it\'s approved'
+              : '✓ Changes saved'}
           </div>
         )}
 
@@ -417,7 +425,7 @@ export default function EditListingPage() {
             disabled={saving}
             className="flex-1 py-3 bg-brand text-white text-sm font-semibold rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-60"
           >
-            {saving ? 'Saving…' : 'Save changes'}
+            {saving ? 'Saving…' : fieldStatus === 'requires_changes' ? 'Save & resubmit' : 'Save changes'}
           </button>
         </div>
 

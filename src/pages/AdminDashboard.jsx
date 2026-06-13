@@ -162,21 +162,13 @@ function FieldInfoSection({ field }) {
 }
 
 // ── Pending approval card ──────────────────────────────────────────────────
-function PendingCard({ field, onApprove, onReject, saving }) {
-  const [showReject, setShowReject] = useState(false)
-  const [rejectReason, setRejectReason] = useState('')
+function PendingCard({ field, onApprove, onReject, onRequestChanges, saving }) {
+  const [mode, setMode] = useState(null) // null | 'reject' | 'changes'
+  const [reason, setReason] = useState('')
 
   const v = computeVerifications(field)
 
-  function handleRejectClick() {
-    if (!showReject) { setShowReject(true); return }
-    if (rejectReason.trim()) onReject(field.id, rejectReason.trim(), field.name)
-  }
-
-  function handleCancel() {
-    setShowReject(false)
-    setRejectReason('')
-  }
+  function handleCancel() { setMode(null); setReason('') }
 
   const owner = field.users
   const profile = owner?.owner_profiles?.[0]
@@ -211,36 +203,40 @@ function PendingCard({ field, onApprove, onReject, saving }) {
             label={v.address_geocoded ? 'Address geocoded — map pin set' : 'Address not geocoded — will not appear on map'}
             passed={v.address_geocoded}
           />
-          <VerificationRow
-            label={v.website_responds ? `Website provided` : 'No website provided'}
-            passed={v.website_responds}
-          />
-          <VerificationRow
-            label="No photos uploaded yet — listing will show placeholder"
-            passed={v.photos_uploaded}
-          />
-          <VerificationRow
-            label={v.hours_provided ? 'Hours provided' : 'No hours provided'}
-            passed={v.hours_provided}
-          />
+          <VerificationRow label={v.website_responds ? 'Website provided' : 'No website provided'} passed={v.website_responds} />
+          <VerificationRow label="No photos uploaded yet — listing will show placeholder" passed={v.photos_uploaded} />
+          <VerificationRow label={v.hours_provided ? 'Hours provided' : 'No hours provided'} passed={v.hours_provided} />
         </div>
       </div>
 
-      {showReject && (
+      {mode === 'reject' && (
         <div className="px-5 pb-4">
-          <label className="block text-xs font-semibold text-gray-600 mb-1.5">Reason for rejection</label>
+          <label className="block text-xs font-semibold text-red-600 mb-1.5">Reason for rejection — this listing will be permanently closed</label>
           <textarea
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="Tell the owner why their listing wasn't approved and what they need to fix..."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Tell the owner why their listing was not approved..."
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 text-gray-700 resize-none"
+            className="w-full px-3 py-2 border border-red-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 text-gray-700 resize-none"
+          />
+        </div>
+      )}
+
+      {mode === 'changes' && (
+        <div className="px-5 pb-4">
+          <label className="block text-xs font-semibold text-amber-600 mb-1.5">What needs to be updated? — owner can edit and resubmit</label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Tell the owner exactly what needs to be fixed before their listing can be approved..."
+            rows={3}
+            className="w-full px-3 py-2 border border-amber-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 text-gray-700 resize-none"
           />
         </div>
       )}
 
       <div className="px-5 pb-4 flex items-center gap-3 flex-wrap">
-        {!showReject ? (
+        {mode === null ? (
           <>
             <button
               onClick={() => onApprove(field.id)}
@@ -250,32 +246,41 @@ function PendingCard({ field, onApprove, onReject, saving }) {
               ✓ Approve &amp; publish
             </button>
             <button
-              onClick={handleRejectClick}
+              onClick={() => setMode('changes')}
+              disabled={saving}
+              className="px-4 py-2.5 border border-amber-300 text-sm font-medium text-amber-600 rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-50"
+            >
+              Request changes
+            </button>
+            <button
+              onClick={() => setMode('reject')}
               disabled={saving}
               className="px-4 py-2.5 border border-red-300 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
             >
               Reject
             </button>
           </>
-        ) : (
+        ) : mode === 'reject' ? (
           <>
             <button
-              onClick={handleRejectClick}
-              disabled={!rejectReason.trim() || saving}
-              className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
-                rejectReason.trim() && !saving
-                  ? 'bg-red-600 text-white hover:bg-red-700'
-                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              }`}
+              onClick={() => reason.trim() && onReject(field.id, reason.trim(), field.name)}
+              disabled={!reason.trim() || saving}
+              className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${reason.trim() && !saving ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
             >
               Confirm rejection
             </button>
+            <button onClick={handleCancel} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
+          </>
+        ) : (
+          <>
             <button
-              onClick={handleCancel}
-              className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+              onClick={() => reason.trim() && onRequestChanges(field.id, reason.trim(), field.name)}
+              disabled={!reason.trim() || saving}
+              className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${reason.trim() && !saving ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
             >
-              Cancel
+              Send &amp; request changes
             </button>
+            <button onClick={handleCancel} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
           </>
         )}
       </div>
@@ -383,9 +388,9 @@ function computeAddedFields(field) {
   return added
 }
 
-function ClaimCard({ field, onApprove, onReject, saving }) {
-  const [showReject, setShowReject] = useState(false)
-  const [rejectReason, setRejectReason] = useState('')
+function ClaimCard({ field, onApprove, onReject, onRequestChanges, saving }) {
+  const [mode, setMode] = useState(null) // null | 'reject' | 'changes'
+  const [reason, setReason] = useState('')
 
   const claimant = field.users
   const claimantLabel = claimant
@@ -393,15 +398,7 @@ function ClaimCard({ field, onApprove, onReject, saving }) {
     : null
   const addedFields = computeAddedFields(field)
 
-  function handleRejectClick() {
-    if (!showReject) { setShowReject(true); return }
-    if (rejectReason.trim()) onReject(field.id, rejectReason.trim(), field.name)
-  }
-
-  function handleCancel() {
-    setShowReject(false)
-    setRejectReason('')
-  }
+  function handleCancel() { setMode(null); setReason('') }
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
@@ -421,21 +418,34 @@ function ClaimCard({ field, onApprove, onReject, saving }) {
 
       <FieldInfoSection field={field} />
 
-      {showReject && (
+      {mode === 'reject' && (
         <div className="px-5 pb-4 pt-3">
-          <label className="block text-xs font-semibold text-gray-600 mb-1.5">Reason for rejection</label>
+          <label className="block text-xs font-semibold text-red-600 mb-1.5">Reason for rejection — claim will be permanently closed</label>
           <textarea
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="Tell the owner why their listing wasn't approved and what they need to fix..."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Tell the claimant why their claim was not approved..."
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 text-gray-700 resize-none"
+            className="w-full px-3 py-2 border border-red-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 text-gray-700 resize-none"
+          />
+        </div>
+      )}
+
+      {mode === 'changes' && (
+        <div className="px-5 pb-4 pt-3">
+          <label className="block text-xs font-semibold text-amber-600 mb-1.5">What needs to be updated? — claimant can edit and resubmit</label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Tell the claimant exactly what needs to be fixed before their claim can be approved..."
+            rows={3}
+            className="w-full px-3 py-2 border border-amber-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 text-gray-700 resize-none"
           />
         </div>
       )}
 
       <div className="px-5 pb-4 flex items-center gap-3 flex-wrap">
-        {!showReject ? (
+        {mode === null ? (
           <>
             <button
               onClick={() => onApprove(field.id, field.name)}
@@ -445,32 +455,41 @@ function ClaimCard({ field, onApprove, onReject, saving }) {
               ✓ Approve claim
             </button>
             <button
-              onClick={handleRejectClick}
+              onClick={() => setMode('changes')}
+              disabled={saving}
+              className="px-4 py-2.5 border border-amber-300 text-sm font-medium text-amber-600 rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-50"
+            >
+              Request changes
+            </button>
+            <button
+              onClick={() => setMode('reject')}
               disabled={saving}
               className="px-4 py-2.5 border border-red-300 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
             >
               Reject
             </button>
           </>
-        ) : (
+        ) : mode === 'reject' ? (
           <>
             <button
-              onClick={handleRejectClick}
-              disabled={!rejectReason.trim() || saving}
-              className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
-                rejectReason.trim() && !saving
-                  ? 'bg-red-600 text-white hover:bg-red-700'
-                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              }`}
+              onClick={() => reason.trim() && onReject(field.id, reason.trim(), field.name)}
+              disabled={!reason.trim() || saving}
+              className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${reason.trim() && !saving ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
             >
               Confirm rejection
             </button>
+            <button onClick={handleCancel} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
+          </>
+        ) : (
+          <>
             <button
-              onClick={handleCancel}
-              className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+              onClick={() => reason.trim() && onRequestChanges(field.id, reason.trim(), field.name)}
+              disabled={!reason.trim() || saving}
+              className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${reason.trim() && !saving ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
             >
-              Cancel
+              Send &amp; request changes
             </button>
+            <button onClick={handleCancel} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
           </>
         )}
       </div>
@@ -564,6 +583,17 @@ export default function AdminDashboard() {
     setSaving(false)
   }
 
+  async function handleRequestChanges(id, rejection_reason, fieldName) {
+    setSaving(true)
+    const { error } = await supabase.from('fields').update({ listing_status: 'requires_changes', rejection_reason }).eq('id', id)
+    if (error) { setError(error.message) } else {
+      setPendingFields((prev) => prev.filter((f) => f.id !== id))
+      showToast(`Changes requested for ${fieldName}.`)
+      notifyOwner(id, 'requires_changes')
+    }
+    setSaving(false)
+  }
+
   async function handleHide(id) {
     setSaving(true)
     const { error } = await supabase.from('fields').update({ listing_status: 'hidden' }).eq('id', id)
@@ -635,6 +665,22 @@ export default function AdminDashboard() {
       setPendingClaims((prev) => prev.filter((f) => f.id !== id))
       showToast(`${fieldName} has been rejected.`)
       notifyOwner(id, 'rejected')
+    }
+    setSaving(false)
+  }
+
+  async function handleRequestClaimChanges(id, rejection_reason, fieldName) {
+    setSaving(true)
+    const { error } = await supabase.from('fields').update({
+      listing_status: 'requires_changes',
+      rejection_reason,
+      claim_requested_by: null,
+      claim_requested_at: null,
+    }).eq('id', id)
+    if (error) { setError(error.message) } else {
+      setPendingClaims((prev) => prev.filter((f) => f.id !== id))
+      showToast(`Changes requested for ${fieldName}.`)
+      notifyOwner(id, 'requires_changes')
     }
     setSaving(false)
   }
@@ -735,6 +781,7 @@ export default function AdminDashboard() {
                       field={field}
                       onApprove={handleApprove}
                       onReject={handleReject}
+                      onRequestChanges={handleRequestChanges}
                       saving={saving}
                     />
                   ))}
@@ -758,6 +805,7 @@ export default function AdminDashboard() {
                       field={field}
                       onApprove={handleApproveClaim}
                       onReject={handleRejectClaim}
+                      onRequestChanges={handleRequestClaimChanges}
                       saving={saving}
                     />
                   ))}

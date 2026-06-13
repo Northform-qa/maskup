@@ -51,24 +51,50 @@ function approvedEmail(fieldName: string): { subject: string; html: string } {
   }
 }
 
-// ── Rejected template ─────────────────────────────────────────
+// ── Hard rejected template ────────────────────────────────────
 function rejectedEmail(fieldName: string, rejectionReason: string): { subject: string; html: string } {
   return {
-    subject: 'Update needed on your MaskUp.gg listing',
+    subject: 'Your MaskUp.gg listing was not approved',
     html: emailWrapper(`
       <h1 style="font-size:20px;font-weight:700;color:#111827;text-align:center;margin:0 0 12px;">
-        Update needed
+        Listing not approved
       </h1>
       <p style="font-size:15px;color:#4B5563;text-align:center;line-height:1.6;margin:0 0 20px;">
-        Thanks for submitting <strong>${fieldName}</strong> to MaskUp.gg. After review, we need a few updates before we can approve your listing.
+        Thank you for submitting <strong>${fieldName}</strong> to MaskUp.gg. After review, we're unable to approve this listing.
       </p>
-      <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:16px;margin:0 0 24px;">
-        <p style="font-size:13px;font-weight:600;color:#92400E;margin:0 0 6px;">Reason for review:</p>
+      <div style="background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:16px;margin:0 0 24px;">
+        <p style="font-size:13px;font-weight:600;color:#991B1B;margin:0 0 6px;">Reason:</p>
+        <p style="font-size:14px;color:#7F1D1D;margin:0;line-height:1.5;">${rejectionReason}</p>
+      </div>
+      <p style="font-size:13px;color:#9CA3AF;text-align:center;margin:0;">
+        Questions? Email us at
+        <a href="mailto:support@maskup.gg" style="color:#3B6D11;">support@maskup.gg</a>
+      </p>
+    `),
+  }
+}
+
+// ── Requires changes template ─────────────────────────────────
+function requiresChangesEmail(fieldName: string, rejectionReason: string): { subject: string; html: string } {
+  return {
+    subject: 'Action required: updates needed for your MaskUp.gg listing',
+    html: emailWrapper(`
+      <h1 style="font-size:20px;font-weight:700;color:#111827;text-align:center;margin:0 0 12px;">
+        Updates needed
+      </h1>
+      <p style="font-size:15px;color:#4B5563;text-align:center;line-height:1.6;margin:0 0 20px;">
+        Thanks for submitting <strong>${fieldName}</strong> to MaskUp.gg. We've reviewed your listing and need a few things updated before we can approve it.
+      </p>
+      <div style="background:#FFFBEB;border:1px solid #F59E0B;border-radius:8px;padding:16px;margin:0 0 24px;">
+        <p style="font-size:13px;font-weight:600;color:#92400E;margin:0 0 6px;">What needs to be updated:</p>
         <p style="font-size:14px;color:#78350F;margin:0;line-height:1.5;">${rejectionReason}</p>
       </div>
-      <a href="https://www.maskup.gg/register"
+      <p style="font-size:15px;color:#4B5563;text-align:center;line-height:1.6;margin:0 0 24px;">
+        Sign in to your profile to edit your listing and resubmit it for review.
+      </p>
+      <a href="https://www.maskup.gg/owner-dashboard/edit"
          style="display:block;background:#3B6D11;color:#ffffff;text-align:center;text-decoration:none;font-weight:600;font-size:15px;padding:14px 24px;border-radius:8px;margin:0 0 24px;">
-        Edit your listing
+        Edit my listing
       </a>
       <p style="font-size:13px;color:#9CA3AF;text-align:center;margin:0;">
         Questions? Email us at
@@ -128,7 +154,7 @@ Deno.serve(async (req: Request) => {
     return new Response('Forbidden', { status: 403, headers: CORS_HEADERS })
   }
 
-  let body: { fieldId: string; action: 'approved' | 'rejected' }
+  let body: { fieldId: string; action: 'approved' | 'rejected' | 'requires_changes' }
   try {
     body = await req.json()
   } catch {
@@ -136,7 +162,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const { fieldId, action } = body
-  if (!fieldId || !['approved', 'rejected'].includes(action)) {
+  if (!fieldId || !['approved', 'rejected', 'requires_changes'].includes(action)) {
     return new Response('Invalid request body', { status: 400, headers: CORS_HEADERS })
   }
 
@@ -164,9 +190,12 @@ Deno.serve(async (req: Request) => {
     return new Response('Owner not found', { status: 404, headers: CORS_HEADERS })
   }
 
+  const fallbackReason = 'Please contact support@maskup.gg for details.'
   const template = action === 'approved'
     ? approvedEmail(field.name)
-    : rejectedEmail(field.name, field.rejection_reason ?? 'Please contact support@maskup.gg for details.')
+    : action === 'requires_changes'
+      ? requiresChangesEmail(field.name, field.rejection_reason ?? fallbackReason)
+      : rejectedEmail(field.name, field.rejection_reason ?? fallbackReason)
 
   const emailRes = await fetch(RESEND_API_URL, {
     method: 'POST',
