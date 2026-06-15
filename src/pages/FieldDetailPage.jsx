@@ -433,10 +433,14 @@ export default function FieldDetailPage() {
         {/* ── 9. Hours ── */}
         <div className="mb-5">
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Hours</h2>
-          {!field.claimed && Object.keys(field.hours ?? {}).length === 0 ? (
-            <p className="text-sm text-amber-700">
-              Hours not listed yet — next time you visit {field.name}, ask them about claiming their free MaskUp.gg listing!
-            </p>
+          {!field.hours || Object.keys(field.hours).length === 0 ? (
+            <div>
+              <p className="text-sm text-gray-700">Contact field for hours</p>
+              {field.phone && (
+                <a href={`tel:${field.phone}`} className="text-sm font-medium text-brand">{field.phone}</a>
+              )}
+              <p className="text-xs text-gray-400 mt-1">Hours vary — call ahead</p>
+            </div>
           ) : (
             <>
               <div className="divide-y divide-gray-100">

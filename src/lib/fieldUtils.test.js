@@ -216,6 +216,36 @@ describe('normalizeField', () => {
   })
 })
 
+// ─── hours null check (FieldDetailPage "Contact field for hours" condition) ───
+
+describe('hours null check logic', () => {
+  // Mirrors the condition in FieldDetailPage.jsx:
+  // !field.hours || Object.keys(field.hours).length === 0
+  function showHoursFallback(hours) {
+    return !hours || Object.keys(hours).length === 0
+  }
+
+  it('shows fallback when hours is null', () => {
+    expect(showHoursFallback(null)).toBe(true)
+  })
+
+  it('shows fallback when hours is undefined', () => {
+    expect(showHoursFallback(undefined)).toBe(true)
+  })
+
+  it('shows fallback when hours is an empty object', () => {
+    expect(showHoursFallback({})).toBe(true)
+  })
+
+  it('does not show fallback when hours has at least one day entry', () => {
+    expect(showHoursFallback({ Mon: '9am–5pm' })).toBe(false)
+  })
+
+  it('does not show fallback when hours has multiple day entries', () => {
+    expect(showHoursFallback({ Mon: { open: '09:00', close: '17:00' }, Tue: { closed: true } })).toBe(false)
+  })
+})
+
 // ─── fieldMatchesFilter ───────────────────────────────────────
 
 describe('fieldMatchesFilter', () => {

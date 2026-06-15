@@ -440,23 +440,24 @@ export default function DirectoryPage() {
                 {/* Stat row */}
                 <div className="flex gap-2 mb-4">
                   {[
-                    {
-                      icon: '🕐',
-                      label: "TODAY'S HOURS",
-                      value: (() => {
-                        const hours = getTodayHours(selectedField.hours)
-                        if (hours) return hours
-                        const isIndoor = selectedField.field_types?.includes('Indoor')
-                        return isIndoor ? 'Open year-round' : 'Closed today'
-                      })(),
-                    },
+                    (() => {
+                      const noHoursData = !selectedField.hours || Object.keys(selectedField.hours).length === 0
+                      const value = noHoursData
+                        ? 'Contact field'
+                        : (() => {
+                            const hours = getTodayHours(selectedField.hours)
+                            if (hours) return hours
+                            return selectedField.field_types?.includes('Indoor') ? 'Open year-round' : 'Closed today'
+                          })()
+                      return { icon: '🕐', label: "TODAY'S HOURS", value, muted: noHoursData }
+                    })(),
                     { icon: '💰', label: 'GENERAL PRICING', value: selectedField.pricing, skip: !selectedField.pricing },
                     { icon: '🎿', label: 'RENTALS', value: selectedField.rentals_available ? 'Yes' : 'No', skip: !selectedField.claimed },
                   ].filter((s) => !s.skip).map((stat) => (
                     <div key={stat.label} className="flex-1 border border-gray-200 rounded-lg p-2 flex flex-col items-center gap-0.5 text-center">
                       <span className="text-base">{stat.icon}</span>
                       <span className="text-[9px] text-gray-400 uppercase tracking-wide font-medium">{stat.label}</span>
-                      <span className="text-sm font-semibold text-gray-800 leading-tight">{stat.value}</span>
+                      <span className={`text-sm font-semibold leading-tight ${stat.muted ? 'text-gray-400' : 'text-gray-800'}`}>{stat.value}</span>
                     </div>
                   ))}
                 </div>
