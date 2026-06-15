@@ -166,7 +166,7 @@ export default function FieldDetailPage() {
   const isIndoor = field.field_types.includes('Indoor')
 
   return (
-    <div className="min-h-screen bg-white pb-40 md:pb-24">
+    <div className="min-h-screen bg-white pb-24 md:pb-0">
 
       {/* ── 1 + 2. Hero photo with top bar overlaid ── */}
       <div className="relative">
@@ -278,19 +278,27 @@ export default function FieldDetailPage() {
           </div>
         )}
 
-        {/* ── 4. Stat row — omit Pricing/Rentals for unclaimed when data missing ── */}
-        <div className="flex gap-2 mb-5">
-          {[
-            { icon: '⚡', label: 'FIELDS', value: field.num_fields, skip: field.num_fields == null },
-            { icon: '💰', label: 'PRICING', value: field.pricing?.split('–')[0]?.trim(), skip: !field.pricing },
-            { icon: '🎿', label: 'RENTALS', value: field.rentals_available ? 'Yes' : 'No', skip: !field.claimed },
-          ].filter((s) => !s.skip).map((stat) => (
-            <div key={stat.label} className="flex-1 border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-1">
-              <span className="text-xl">{stat.icon}</span>
-              <span className="text-[9px] text-gray-400 uppercase tracking-wide font-medium">{stat.label}</span>
-              <span className="text-sm font-bold text-gray-800 text-center leading-tight">{stat.value}</span>
+        {/* ── 4. Stat row + Rentals pill ── */}
+        <div className="mb-5">
+          <div className="flex gap-2">
+            {[
+              { icon: <i className="ti ti-flag text-base text-green-700" aria-hidden="true" />, label: 'FIELDS', value: field.num_fields, skip: field.num_fields == null },
+              { icon: <i className="ti ti-currency-dollar text-base text-green-700" aria-hidden="true" />, label: 'PRICING', value: field.pricing?.split('–')[0]?.trim(), skip: !field.pricing },
+            ].filter((s) => !s.skip).map((stat) => (
+              <div key={stat.label} className="flex-1 border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-1">
+                {stat.icon}
+                <span className="text-[9px] text-gray-400 uppercase tracking-wide font-medium">{stat.label}</span>
+                <span className="text-sm font-bold text-gray-800 text-center leading-tight">{stat.value}</span>
+              </div>
+            ))}
+          </div>
+          {field.rentals_available && (
+            <div className="mt-2">
+              <span className="inline-block px-3 py-1 rounded-full bg-brand-100 text-brand text-sm font-medium">
+                Rentals available
+              </span>
             </div>
-          ))}
+          )}
         </div>
 
         {/* Pricing fallback — shown for any field with no pricing data */}
@@ -510,7 +518,7 @@ export default function FieldDetailPage() {
       </div>
 
       {/* ── 11. Sticky footer ── */}
-      <div className="fixed bottom-16 md:bottom-0 inset-x-0 bg-white border-t border-gray-200 flex items-center gap-3 px-4 py-3 z-50">
+      <div className="md:fixed md:bottom-0 md:inset-x-0 md:z-50 bg-white border-t border-gray-200 flex items-center gap-3 px-4 py-3">
         {field.lat && field.lng ? (
           <a
             href={`https://www.google.com/maps/dir/?api=1&destination=${field.lat},${field.lng}`}
