@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { formatTime, formatDisplayDate, getTodayHours, normalizeEvent, normalizeField, fieldMatchesFilter } from './fieldUtils'
+import { formatTime, formatDisplayDate, getTodayHours, getTodayHoursState, normalizeEvent, normalizeField, fieldMatchesFilter } from './fieldUtils'
 
 // Pin to a known Monday so getTodayHours always reads the 'Mon' key
 const MOCK_MONDAY = new Date('2026-06-15T12:00:00').getTime()
@@ -213,6 +213,52 @@ describe('normalizeField', () => {
     const result = normalizeField({ ...base, city: 'Toronto', rating: 4.7 })
     expect(result.city).toBe('Toronto')
     expect(result.rating).toBe(4.7)
+  })
+})
+
+// ─── getTodayHoursState ───────────────────────────────────────
+
+describe('getTodayHoursState', () => {
+  // Pinned to Monday via beforeEach above — reads 'Mon' key
+
+  it('returns null when hours is null (no data → Contact field)', () => {
+    expect(getTodayHoursState(null)).toBeNull()
+  })
+
+  it('returns null when hours is undefined', () => {
+    expect(getTodayHoursState(undefined)).toBeNull()
+  })
+
+  it('returns null when hours is an empty object', () => {
+    expect(getTodayHoursState({})).toBeNull()
+  })
+
+  it('returns false when today has no entry in hours (Closed today)', () => {
+    expect(getTodayHoursState({ Tue: '10am–4pm' })).toBe(false)
+  })
+
+  it('returns false when today is string "Closed"', () => {
+    expect(getTodayHoursState({ Mon: 'Closed' })).toBe(false)
+  })
+
+  it('returns false when today has closed: true (object format)', () => {
+    expect(getTodayHoursState({ Mon: { closed: true } })).toBe(false)
+  })
+
+  it('returns false when today entry has no open/close and is not a string', () => {
+    expect(getTodayHoursState({ Mon: {} })).toBe(false)
+  })
+
+  it('returns time string for legacy string format', () => {
+    expect(getTodayHoursState({ Mon: '9am–5pm' })).toBe('9am–5pm')
+  })
+
+  it('returns formatted time string for object format with open/close', () => {
+    expect(getTodayHoursState({ Mon: { open: '10:00', close: '16:00' } })).toBe('10am–4pm')
+  })
+
+  it('returns formatted time string with minutes when non-zero', () => {
+    expect(getTodayHoursState({ Mon: { open: '09:30', close: '17:30' } })).toBe('9:30am–5:30pm')
   })
 })
 

@@ -55,6 +55,20 @@ export function getTodayHours(hours) {
   return null
 }
 
+// Three-state hours display for field cards.
+// Returns: null  → no hours data at all ("Contact field")
+//          false → has hours data but today is closed or has no entry ("Closed today")
+//          string → open time range e.g. "10am–4pm"
+export function getTodayHoursState(hours) {
+  if (!hours || Object.keys(hours).length === 0) return null
+  const key = DAY_KEYS[new Date().getDay()]
+  const val = hours[key]
+  if (!val || val.closed) return false
+  if (typeof val === 'string') return val !== 'Closed' ? val : false
+  if (val.open && val.close) return `${formatTime(val.open)}–${formatTime(val.close)}`
+  return false
+}
+
 // Converts Supabase time strings ('10:00:00') to display format ('10am', '10:30am')
 export function formatTime(t) {
   if (!t) return null

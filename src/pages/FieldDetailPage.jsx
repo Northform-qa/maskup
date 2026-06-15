@@ -500,20 +500,6 @@ export default function FieldDetailPage() {
           )}
         </div>
 
-        {/* ── 10. Rental gear ── */}
-        <div className="mb-5">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Rental gear</h2>
-          {field.rentals_available ? (
-            <div className="flex items-start gap-2">
-              <span className="text-brand text-sm mt-0.5 flex-shrink-0">✓</span>
-              {field.rental_pricing && <p className="text-sm text-gray-600">{field.rental_pricing}</p>}
-            </div>
-          ) : !field.claimed ? (
-            <p className="text-sm text-amber-700">Rental info not available yet — ask {field.name} about claiming their free MaskUp.gg listing</p>
-          ) : (
-            <p className="text-sm text-gray-400">No rentals — bring your own gear</p>
-          )}
-        </div>
 
       </div>
 
