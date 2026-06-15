@@ -246,6 +246,48 @@ describe('hours null check logic', () => {
   })
 })
 
+// ─── pricing null check (FieldDetailPage pricing fallback condition) ─────────
+
+describe('pricing null check logic', () => {
+  // Mirrors the condition in FieldDetailPage.jsx: !field.pricing
+  // and the branch: field.owner_id ? tel link : /register link
+  function showPricingFallback(pricing) {
+    return !pricing
+  }
+  function pricingBranch(field) {
+    if (field.owner_id) return field.phone ? 'tel' : 'nothing'
+    return 'register'
+  }
+
+  it('shows fallback when pricing is null', () => {
+    expect(showPricingFallback(null)).toBe(true)
+  })
+
+  it('shows fallback when pricing is undefined', () => {
+    expect(showPricingFallback(undefined)).toBe(true)
+  })
+
+  it('shows fallback when pricing is empty string', () => {
+    expect(showPricingFallback('')).toBe(true)
+  })
+
+  it('does not show fallback when pricing has a value', () => {
+    expect(showPricingFallback('$25–$40')).toBe(false)
+  })
+
+  it('shows register link for unclaimed field (no owner_id)', () => {
+    expect(pricingBranch({ owner_id: null, phone: null })).toBe('register')
+  })
+
+  it('shows tel link for claimed field with phone', () => {
+    expect(pricingBranch({ owner_id: 'abc', phone: '555-1234' })).toBe('tel')
+  })
+
+  it('shows nothing for claimed field with no phone', () => {
+    expect(pricingBranch({ owner_id: 'abc', phone: null })).toBe('nothing')
+  })
+})
+
 // ─── fieldMatchesFilter ───────────────────────────────────────
 
 describe('fieldMatchesFilter', () => {

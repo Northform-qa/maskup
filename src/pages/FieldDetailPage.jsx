@@ -166,7 +166,7 @@ export default function FieldDetailPage() {
   const isIndoor = field.field_types.includes('Indoor')
 
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div className="min-h-screen bg-white pb-40 md:pb-24">
 
       {/* ── 1 + 2. Hero photo with top bar overlaid ── */}
       <div className="relative">
@@ -281,7 +281,7 @@ export default function FieldDetailPage() {
         {/* ── 4. Stat row — omit Pricing/Rentals for unclaimed when data missing ── */}
         <div className="flex gap-2 mb-5">
           {[
-            { icon: '⚡', label: 'FIELDS', value: field.num_fields },
+            { icon: '⚡', label: 'FIELDS', value: field.num_fields, skip: field.num_fields == null },
             { icon: '💰', label: 'PRICING', value: field.pricing?.split('–')[0]?.trim(), skip: !field.pricing },
             { icon: '🎿', label: 'RENTALS', value: field.rentals_available ? 'Yes' : 'No', skip: !field.claimed },
           ].filter((s) => !s.skip).map((stat) => (
@@ -293,11 +293,22 @@ export default function FieldDetailPage() {
           ))}
         </div>
 
-        {/* Pricing CTA — unclaimed fields with no pricing data */}
-        {!field.claimed && !field.pricing && (
-          <p className="text-sm text-amber-700 mb-5">
-            Pricing not listed yet — mention MaskUp.gg next time you're at {field.name}
-          </p>
+        {/* Pricing fallback — shown for any field with no pricing data */}
+        {!field.pricing && (
+          <div className="mb-5">
+            <p className="text-sm text-gray-400">Pricing not listed yet</p>
+            {field.owner_id ? (
+              field.phone && (
+                <a href={`tel:${field.phone}`} className="text-sm font-medium text-brand">
+                  Contact field for pricing
+                </a>
+              )
+            ) : (
+              <Link to="/register" className="text-sm font-medium text-brand">
+                Own this field? Add your pricing →
+              </Link>
+            )}
+          </div>
         )}
 
         {/* ── 4b. Weather ── */}
@@ -499,7 +510,7 @@ export default function FieldDetailPage() {
       </div>
 
       {/* ── 11. Sticky footer ── */}
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 flex items-center gap-3 px-4 py-3 z-50">
+      <div className="fixed bottom-16 md:bottom-0 inset-x-0 bg-white border-t border-gray-200 flex items-center gap-3 px-4 py-3 z-50">
         {field.lat && field.lng ? (
           <a
             href={`https://www.google.com/maps/dir/?api=1&destination=${field.lat},${field.lng}`}
