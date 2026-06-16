@@ -637,9 +637,18 @@ export default function FieldDetailPage() {
             🗺️ Directions
           </button>
         )}
-        <button className="flex-1 py-3 bg-brand rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 hover:bg-brand-dark transition-colors">
-          <span>📞</span> Call to book
-        </button>
+        {field.phone ? (
+          <a
+            href={`tel:${field.phone}`}
+            className="flex-1 py-3 bg-brand rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 hover:bg-brand-dark transition-colors"
+          >
+            <span>📞</span> Call to book
+          </a>
+        ) : (
+          <button disabled className="flex-1 py-3 bg-gray-200 rounded-xl text-sm font-semibold text-gray-400 flex items-center justify-center gap-2 cursor-not-allowed">
+            <span>📞</span> Call to book
+          </button>
+        )}
       </div>
     </div>
   )
