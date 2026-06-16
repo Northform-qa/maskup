@@ -395,3 +395,41 @@ describe('fieldMatchesFilter', () => {
     expect(fieldMatchesFilter({ field_types: null }, 'Woodsball')).toBe(false)
   })
 })
+
+// ─── today's date calculation (mirrors TODAY/today in FieldDetailPage,
+//     DiscoverPage, DirectoryPage, PlayerProfilePage) ──────────────────
+
+describe('today date calculation logic', () => {
+  // Old, buggy approach: UTC date, rolls over early for negative-UTC-offset users
+  function buggyToday() {
+    return new Date().toISOString().split('T')[0]
+  }
+  // Fixed approach used in the app: local calendar date
+  function fixedToday() {
+    return new Date().toLocaleDateString('en-CA')
+  }
+
+  it('UTC method rolls over to the next day for an evening EST user, fixed method does not', () => {
+    // 9:00 PM EST on 2026-06-15 = 1:00 AM UTC on 2026-06-16
+    vi.setSystemTime(new Date('2026-06-16T01:00:00.000Z'))
+    process.env.TZ = 'America/Toronto'
+    expect(buggyToday()).toBe('2026-06-16')
+    expect(fixedToday()).toBe('2026-06-15')
+  })
+
+  it('UTC method rolls over to the next day for a late-night EST user, fixed method does not', () => {
+    // 11:30 PM EST on 2026-06-15 = 3:30 AM UTC on 2026-06-16
+    vi.setSystemTime(new Date('2026-06-16T03:30:00.000Z'))
+    process.env.TZ = 'America/Toronto'
+    expect(buggyToday()).toBe('2026-06-16')
+    expect(fixedToday()).toBe('2026-06-15')
+  })
+
+  it('both methods agree during the day when there is no rollover risk', () => {
+    // 11:00 AM EST on 2026-06-15 = 3:00 PM UTC on 2026-06-15
+    vi.setSystemTime(new Date('2026-06-15T15:00:00.000Z'))
+    process.env.TZ = 'America/Toronto'
+    expect(fixedToday()).toBe(buggyToday())
+    expect(fixedToday()).toBe('2026-06-15')
+  })
+})

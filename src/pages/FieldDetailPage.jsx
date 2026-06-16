@@ -26,7 +26,7 @@ const EVENT_TYPE_COLORS = {
 const DAYS_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const TODAY_DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()]
 
-const TODAY = new Date().toISOString().split('T')[0]
+const TODAY = new Date().toLocaleDateString('en-CA')
 
 // ── Crowd check-in (crowd_reports table) ──
 // player_count_range is always 'under_25' as a placeholder — we count rows (one per

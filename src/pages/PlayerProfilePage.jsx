@@ -216,7 +216,7 @@ function StatePlayer({ user, profile, signOut, extraTopContent = null }) {
   const [rsvpCount, setRsvpCount] = useState(0)
   const [todayRsvp, setTodayRsvp] = useState(null)
   const [pwResetSent, setPwResetSent] = useState(false)
-  const TODAY = new Date().toISOString().split('T')[0]
+  const TODAY = new Date().toLocaleDateString('en-CA')
   const MONTH_START = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
 
   useEffect(() => {

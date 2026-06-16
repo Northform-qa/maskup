@@ -71,7 +71,7 @@ export default function DirectoryPage() {
 
   useEffect(() => {
     async function fetchFields() {
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date().toLocaleDateString('en-CA')
       const [{ data, error }, { data: goingRows }] = await Promise.all([
         supabase.from('fields').select('*, events(*)').eq('listing_status', 'published').order('name'),
         supabase.from('going_today').select('field_id').eq('date', today),
