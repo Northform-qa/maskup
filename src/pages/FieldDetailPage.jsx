@@ -210,9 +210,11 @@ export default function FieldDetailPage() {
     setRsvpBusy(true)
     setGoingCount((c) => c + 1)
     setUserRsvp({ field_id: id, fields: { name: field.name } })
+    console.log('DEBUG handleRsvp payload', { field_id: id, user_id: user.id, date: TODAY })
     const { error } = await supabase
       .from('going_today')
       .upsert({ field_id: id, user_id: user.id, date: TODAY }, { onConflict: 'user_id,date' })
+    console.log('DEBUG handleRsvp error', error)
     if (error) {
       setGoingCount((c) => c - 1)
       setUserRsvp(null)
