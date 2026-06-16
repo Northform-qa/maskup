@@ -4,7 +4,7 @@
 // crowd_report_last_updated: null or ISO timestamp
 // ─────────────────────────────────────────────────────────────
 export function getActivePlayers(field) {
-  const { active_players_now, crowd_report_count, crowd_report_last_updated } = field
+  const { active_players_now, crowd_report_last_updated } = field
   const now = Date.now()
 
   if (active_players_now == null) {
