@@ -5,7 +5,7 @@ import FieldTypeChip from '../components/FieldTypeChip'
 import HeroPhoto from '../components/HeroPhoto'
 import ActivePlayers from '../components/ActivePlayers'
 import { supabase } from '../lib/supabase'
-import { normalizeField, formatTime, getFieldStatus } from '../lib/fieldUtils'
+import { normalizeField, formatTime, getFieldStatus, getDistanceKm } from '../lib/fieldUtils'
 import { useAuth } from '../context/AuthContext'
 import WeatherChip from '../components/WeatherChip'
 
@@ -28,6 +28,29 @@ const TODAY_DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().g
 
 const TODAY = new Date().toISOString().split('T')[0]
 
+// ── Crowd check-in (crowd_reports table) ──
+// player_count_range is always 'under_25' as a placeholder — we count rows (one per
+// check-in), not range averages. The Edge Function aggregate_crowd_reports already
+// reads these rows on its 5-minute cron and writes active_players_now etc. to fields.
+// lat/lng are always populated from the player's geolocation-verified position.
+// One check-in per user per field per day is enforced client-side before insert.
+//
+// Run in Supabase SQL editor if not already present:
+//
+// CREATE POLICY "Authenticated users can insert crowd reports"
+// ON public.crowd_reports
+// FOR INSERT
+// TO authenticated
+// WITH CHECK (auth.uid() = user_id);
+//
+// -- Required so a user can look up their own prior check-ins (existing RLS has no
+// -- SELECT policy at all — crowd_reports is write-only without this):
+// CREATE POLICY "Users can view their own crowd reports"
+// ON public.crowd_reports
+// FOR SELECT
+// TO authenticated
+// USING (auth.uid() = user_id);
+
 export default function FieldDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -45,6 +68,75 @@ export default function FieldDetailPage() {
   const [rsvpBusy, setRsvpBusy] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
   const [mentionedIt, setMentionedIt] = useState(false)
+
+  const [checkedIn, setCheckedIn] = useState(false)
+  const [checkinBusy, setCheckinBusy] = useState(false)
+  const [checkinMessage, setCheckinMessage] = useState(null)
+
+  async function handleCheckIn() {
+    if (!user || checkinBusy) return
+    setCheckinBusy(true)
+    setCheckinMessage(null)
+
+    const { data: existing, error: existingError } = await supabase
+      .from('crowd_reports')
+      .select('id')
+      .eq('field_id', id)
+      .eq('user_id', user.id)
+      .gte('submitted_at', `${TODAY}T00:00:00.000Z`)
+      .maybeSingle()
+
+    if (existingError) {
+      setCheckinMessage('Something went wrong — try again.')
+      setCheckinBusy(false)
+      return
+    }
+
+    if (existing) {
+      setCheckinMessage("You've already checked in here today")
+      setCheckinBusy(false)
+      return
+    }
+
+    if (!navigator.geolocation) {
+      setCheckinMessage('Location access is needed to check in. Please enable location in your browser settings.')
+      setCheckinBusy(false)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords: { latitude, longitude } }) => {
+        const distance = getDistanceKm(latitude, longitude, Number(field.lat), Number(field.lng))
+        if (distance > 5) {
+          setCheckinMessage('You need to be at the field to check in.')
+          setCheckinBusy(false)
+          return
+        }
+
+        const { error: insertError } = await supabase.from('crowd_reports').insert({
+          field_id: id,
+          user_id: user.id,
+          player_count_range: 'under_25',
+          lat: latitude,
+          lng: longitude,
+        })
+
+        if (insertError) {
+          setCheckinMessage('Something went wrong — try again.')
+          setCheckinBusy(false)
+          return
+        }
+
+        setCheckedIn(true)
+        setCheckinMessage("You're checked in! 🎯 Have a great game.")
+        setCheckinBusy(false)
+      },
+      () => {
+        setCheckinMessage('Location access is needed to check in. Please enable location in your browser settings.')
+        setCheckinBusy(false)
+      }
+    )
+  }
 
   async function handleMentionIt() {
     setMentionedIt(true)
@@ -329,9 +421,35 @@ export default function FieldDetailPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Players on-site now</p>
           <ActivePlayers field={field} size="md" />
           <p className="text-xs text-gray-400 mt-1.5">Community estimate · reports reset nightly</p>
-          <button className="mt-2 text-xs text-brand font-medium hover:underline">
-            Are you here? Submit a report
-          </button>
+
+          {!user ? (
+            <Link
+              to="/login"
+              state={{ from: location.pathname }}
+              className="mt-2 inline-block text-xs text-gray-400 underline"
+            >
+              Sign in to check in
+            </Link>
+          ) : checkedIn ? (
+            <button
+              disabled
+              className="mt-2 px-4 py-2 rounded-lg text-sm font-semibold bg-brand text-white cursor-default"
+            >
+              Checked in ✓
+            </button>
+          ) : (
+            <button
+              onClick={handleCheckIn}
+              disabled={checkinBusy}
+              className="mt-2 px-4 py-2 rounded-lg text-sm font-semibold border-2 border-brand text-brand hover:bg-brand/5 transition-colors disabled:opacity-60"
+            >
+              I'm here
+            </button>
+          )}
+
+          {checkinMessage && (
+            <p className="text-xs text-gray-500 mt-2">{checkinMessage}</p>
+          )}
         </div>
 
         {/* ── 5b. I'm Going Today RSVP ── */}

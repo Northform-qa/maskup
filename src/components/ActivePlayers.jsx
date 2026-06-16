@@ -2,9 +2,9 @@ import { getActivePlayers } from '../data/mockData'
 
 /**
  * Renders the crowd-sourced active players indicator using the display rules:
- * - null data → "No reports yet today"
- * - stale (>2h old) → "Last reported Xh ago" in muted text
- * - fresh → "~N players on-site · N reports · Updated Xm ago"
+ * - null data → "No check-ins yet today"
+ * - stale (>2h old) → "Last check-in reported Xh ago" in muted text
+ * - fresh → "~N players checked in today · Updated X min ago"
  *
  * size: 'sm' (field card) | 'md' (detail page)
  */

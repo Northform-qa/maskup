@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { formatTime, formatDisplayDate, getTodayHours, getTodayHoursState, normalizeEvent, normalizeField, fieldMatchesFilter } from './fieldUtils'
+import { formatTime, formatDisplayDate, getTodayHours, getTodayHoursState, normalizeEvent, normalizeField, fieldMatchesFilter, getDistanceKm } from './fieldUtils'
 
 // Pin to a known Monday so getTodayHours always reads the 'Mon' key
 const MOCK_MONDAY = new Date('2026-06-15T12:00:00').getTime()
@@ -331,6 +331,26 @@ describe('pricing null check logic', () => {
 
   it('shows nothing for claimed field with no phone', () => {
     expect(pricingBranch({ owner_id: 'abc', phone: null })).toBe('nothing')
+  })
+})
+
+// ─── getDistanceKm ──────────────────────────────────────────
+
+describe('getDistanceKm', () => {
+  it('returns ~0 for the same location', () => {
+    expect(getDistanceKm(43.6532, -79.3832, 43.6532, -79.3832)).toBeCloseTo(0, 5)
+  })
+
+  it('returns a distance under 5km for nearby coordinates', () => {
+    // ~0.5km north of the same point
+    const distance = getDistanceKm(43.6532, -79.3832, 43.6577, -79.3832)
+    expect(distance).toBeLessThan(5)
+  })
+
+  it('returns a distance over 5km for far-apart coordinates', () => {
+    // Toronto vs Hamilton, ~60km apart
+    const distance = getDistanceKm(43.6532, -79.3832, 43.2557, -79.8711)
+    expect(distance).toBeGreaterThan(5)
   })
 })
 

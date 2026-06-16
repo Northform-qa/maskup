@@ -8,7 +8,7 @@ export function getActivePlayers(field) {
   const now = Date.now()
 
   if (active_players_now == null) {
-    return { type: 'none', text: 'No reports yet today' }
+    return { type: 'none', text: 'No check-ins yet today' }
   }
 
   if (crowd_report_last_updated) {
@@ -19,17 +19,17 @@ export function getActivePlayers(field) {
 
     if (ageHours >= 2) {
       const hDisplay = Math.floor(ageHours)
-      return { type: 'stale', text: `Last reported ${hDisplay}h ago` }
+      return { type: 'stale', text: `Last check-in reported ${hDisplay}h ago` }
     }
 
     return {
       type: 'fresh',
-      text: `~${active_players_now} players on-site · ${crowd_report_count} report${crowd_report_count !== 1 ? 's' : ''} · Updated ${ageMins}m ago`,
+      text: `~${active_players_now} players checked in today · Updated ${ageMins} min ago`,
       count: active_players_now,
     }
   }
 
-  return { type: 'none', text: 'No reports yet today' }
+  return { type: 'none', text: 'No check-ins yet today' }
 }
 
 // For mock data we simulate different crowd states
