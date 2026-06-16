@@ -1,0 +1,90 @@
+Subject: RLS policies using auth.uid() reject all authenticated requests — confirmed independent of JWT algorithm and API key format
+
+Project ref: wnmxeiqdmfczeaqoacan
+
+SUMMARY
+
+Insert requests against a table with RLS enabled and a standard
+`with check (auth.uid() = user_id)` policy are rejected with 42501
+("new row violates row-level security policy") for every authenticated
+request we've tested — even when the JWT is valid, unexpired, and its
+`sub` claim exactly matches the `user_id` being inserted. The same
+request succeeds immediately when RLS is disabled on the table. We've
+tested across two different signing algorithms and two different API
+key formats; the result never changes. This points to the JWT claims
+not being forwarded into the Postgres session at all for this project,
+rather than anything wrong with our policy, payload, or token.
+
+TABLE AND POLICIES
+
+Table: public.going_today
+Columns: id (uuid), field_id (uuid), user_id (uuid), date (date), created_at (timestamptz)
+RLS: enabled
+No triggers, no rules, single ordinary table in the public schema
+(confirmed via pg_trigger / pg_rules / pg_class).
+
+Policies (confirmed via pg_policy, all permissive):
+  INSERT — with check (auth.uid() = user_id)        [x2, duplicate, same check]
+  UPDATE — using (auth.uid() = user_id), with check (auth.uid() = user_id)
+  DELETE — using (auth.uid() = user_id)
+  SELECT — using (true)
+
+REPRODUCTION REQUEST
+
+POST {SUPABASE_URL}/rest/v1/going_today?on_conflict=user_id,date
+Headers:
+  apikey: <publishable or legacy anon key — see tests below>
+  authorization: Bearer <user access token, sub = 3bfb48d6-c67f-48cd-b8c4-3a7e8daf22f8>
+  content-type: application/json
+  prefer: resolution=merge-duplicates
+Body:
+  {"field_id":"e2023bd6-999e-45fd-bfca-aa0f1d1b8043","user_id":"3bfb48d6-c67f-48cd-b8c4-3a7e8daf22f8","date":"2026-06-16"}
+
+TESTS PERFORMED
+
+Test A — ES256 token + new publishable apikey
+  Token kid f489071a-3d19-4397-9d1c-4358de8294e0, confirmed present and
+  matching in /auth/v1/.well-known/jwks.json.
+  Result: 403, code 42501.
+
+Test B — Same ES256 token + legacy JWT-format anon apikey
+  Result: 403, code 42501 (identical to Test A).
+
+Test C — RLS disabled on going_today, same ES256 token and payload as Test A
+  Result: 201 Created.
+  This proves the payload, table grants, and unique constraint are all fine —
+  isolating the failure to RLS/claims evaluation specifically.
+
+Test D — RLS re-enabled. Added a temporary policy bypassing the auth.uid()
+  helper function, reading the claim directly:
+    with check ((current_setting('request.jwt.claims', true)::json->>'sub')::uuid = user_id)
+  Same ES256 token and payload as Test A.
+  Result: 403, code 42501.
+  This rules out a bug in the auth.uid() function definition — the claims
+  GUC itself appears empty or unset for this request.
+
+Test E — Rotated JWT signing keys from ES256 to a new HS256 standby key,
+  logged out and back in to obtain a freshly-signed HS256 token, retried
+  the identical request from Test A (legacy auth.uid() policy, new
+  publishable apikey).
+  Result: 403, code 42501 (no change).
+
+CONCLUSION
+
+The failure does not depend on signing algorithm (ES256 vs HS256) or
+API key format (new publishable vs legacy JWT anon key) — only on
+whether RLS is enabled. This indicates request.jwt.claims (or
+equivalent) is not being populated in the Postgres session for REST
+API requests on this project, regardless of token validity.
+
+ASK
+
+Please confirm whether JWT claims are being correctly forwarded from
+the data API / PostgREST gateway into the Postgres session for this
+project, and what is different about this project's configuration
+that would cause auth.uid() to consistently resolve to NULL despite a
+valid, matching JWT.
+
+Happy to provide additional request IDs, logs, or run further
+diagnostics on request. One example sb-request-id from a failed
+attempt: 019ece71-0387-7341-8429-786bd409fcd9

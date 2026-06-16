@@ -210,19 +210,9 @@ export default function FieldDetailPage() {
     setRsvpBusy(true)
     setGoingCount((c) => c + 1)
     setUserRsvp({ field_id: id, fields: { name: field.name } })
-    console.log('DEBUG handleRsvp payload', { field_id: id, user_id: user.id, date: TODAY })
-    const { data: { session: debugSession } } = await supabase.auth.getSession()
-    const debugToken = debugSession?.access_token
-    if (debugToken) {
-      const debugPayload = JSON.parse(atob(debugToken.split('.')[1]))
-      console.log('DEBUG jwt', { role: debugPayload.role, sub: debugPayload.sub, exp: debugPayload.exp, now: Math.floor(Date.now() / 1000) })
-    } else {
-      console.log('DEBUG jwt: no access token on session')
-    }
     const { error } = await supabase
       .from('going_today')
       .upsert({ field_id: id, user_id: user.id, date: TODAY }, { onConflict: 'user_id,date' })
-    console.log('DEBUG handleRsvp error', error)
     if (error) {
       setGoingCount((c) => c - 1)
       setUserRsvp(null)
